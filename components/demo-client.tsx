@@ -344,18 +344,6 @@ export default function DemoClient() {
                 </div>
               </CardContent>
             </Card>
-
-            <Card className="bg-black border-gray-800">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Globe className="h-4 w-4 text-blue-400" />
-                  <span className="text-sm text-gray-400">検出言語</span>
-                </div>
-                <p className="text-lg font-semibold text-white">
-                  {ocrResult.language || 'Unknown'}
-                </p>
-              </CardContent>
-            </Card>
           </div>
         )}
 
@@ -368,16 +356,6 @@ export default function DemoClient() {
                   <ImageIcon className="h-5 w-5" />
                   <span>画像解析結果</span>
                 </div>
-                {ocrResult?.textBlocks && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowOverlay(!showOverlay)}
-                    className="text-gray-300 border-gray-600"
-                  >
-                    {showOverlay ? '座標を非表示' : '座標を表示'}
-                  </Button>
-                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -387,21 +365,7 @@ export default function DemoClient() {
                   src={state.imagePreview}
                   alt="Preview"
                   className="w-full max-h-[500px] object-contain rounded-lg border border-gray-600"
-                  onLoad={() => {
-                    // 画像読み込み後に座標オーバーレイを更新
-                    if (imageRef.current && ocrResult?.textBlocks && showOverlay) {
-                      // フォースリレンダリング
-                      setShowOverlay(false)
-                      setTimeout(() => setShowOverlay(true), 10)
-                    }
-                  }}
                 />
-                {showOverlay && ocrResult?.textBlocks && (
-                  <CoordinateOverlay 
-                    textBlocks={ocrResult.textBlocks} 
-                    imageElement={imageRef.current}
-                  />
-                )}
                 {/* エラー時のdoge表示 */}
                 {ocrResult?.error && (
                   <DogeStatusDisplay isLoading={false} error={ocrResult.error} />
@@ -418,9 +382,6 @@ export default function DemoClient() {
               <Tabs defaultValue="structured" className="w-full">
                 <TabsList className="grid w-full grid-cols-4 bg-gray-800">
                   <TabsTrigger value="structured" className="text-gray-300">構造化データ</TabsTrigger>
-                  <TabsTrigger value="textblocks" className="text-gray-300">座標付きテキスト</TabsTrigger>
-                  <TabsTrigger value="raw" className="text-gray-300">生テキスト</TabsTrigger>
-                  <TabsTrigger value="metadata" className="text-gray-300">メタデータ</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="structured" className="p-6">
