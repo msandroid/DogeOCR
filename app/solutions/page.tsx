@@ -1,159 +1,102 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image" // Imageコンポーネントをインポート
+import { useScrollReveal } from "@/components/ui/use-scroll-reveal"
+import { Lightbulb, Zap, ShieldCheck, Globe, FileText, LayoutGrid, Upload, ScanText, Database, CheckCircle, ArrowRight } from "lucide-react"
 
 export default function SolutionsPage() {
+  const header = useScrollReveal<HTMLDivElement>()
+  const features = useScrollReveal<HTMLDivElement>()
+  const usage = useScrollReveal<HTMLDivElement>()
+  const example = useScrollReveal<HTMLDivElement>()
+  const cta = useScrollReveal<HTMLDivElement>()
+
   return (
     <div className="flex flex-col min-h-[100dvh] bg-background py-12 px-4 sm:px-6 lg:px-8">
-      {/* Header Section */}
-      <div className="mx-auto max-w-4xl text-center mb-12">
-        <h1 className="text-4xl font-bold text-foreground mb-4">対応書類</h1> {/* タイトルを「対応書類」に変更 */}
-        <p className="text-lg text-muted-foreground">
-          Doge Worksは、お客様の多様な文書処理ニーズに対応するOCRソリューションを提供します。
+      {/* Header */}
+      <div
+        ref={header.ref}
+        className={`mx-auto max-w-4xl text-left mb-24 transition-all duration-700 ease-out ${header.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
+        <h1 className="text-5xl font-bold text-foreground mb-6 text-left flex items-center gap-4">
+          <FileText className="w-12 h-12 text-primary animate-bounce" />
+          画像を送るだけ。<br />世界中のあらゆる文書を、構造化JSONに。
+        </h1>
+        <p className="text-2xl text-muted-foreground text-left mb-2">
+          DogeOCRは、どんな文書・画像もアップロードするだけでAIが自動判別し、構造化されたJSONデータに変換します。
         </p>
       </div>
 
-      {/* OCR Solution Categories */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-        {/* 定型書類OCR Card (Template) */}
-        <Card className="relative overflow-hidden">
-          <CardHeader className="bg-primary text-primary-foreground p-6 rounded-t-lg">
-            <div className="flex flex-col items-center text-center">
-              <h2 className="text-2xl font-bold mb-2">Template</h2>
-              <CardTitle className="text-xl font-semibold">定型書類OCR</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 bg-card flex flex-col h-full">
-            <CardDescription className="text-muted-foreground mb-4 text-center">
-              事前にレイアウト設定し、帳票内の読み取りたい箇所だけをデータ化
-            </CardDescription>
-            <div className="grid grid-cols-2 gap-3 mb-6 flex-grow">
-              {["申込書", "注文書", "報告書", "アンケート", "納品書", "身分証"].map((doc) => (
-                <div
-                  key={doc}
-                  className="bg-secondary text-foreground py-2 px-4 rounded-md text-center text-sm font-medium"
-                >
-                  {doc}
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground text-center mt-auto">※各種定型書類すべて</p>
-          </CardContent>
-        </Card>
-
-        {/* 特化型OCR Card */}
-        <Card className="relative overflow-hidden">
-          <CardHeader className="bg-primary text-primary-foreground p-6 rounded-t-lg">
-            <div className="absolute top-2 right-2 bg-primary-foreground text-primary text-xs font-bold px-3 py-1 rounded-full">
-              事前設定不要
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <h2 className="text-2xl font-bold mb-2">特化型</h2>
-              <CardTitle className="text-xl font-semibold">特化型OCR</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 bg-card flex flex-col h-full">
-            <CardDescription className="text-muted-foreground mb-4 text-center">
-              読み取るだけで、必要情報を自動解析・認識をしてデータ化
-            </CardDescription>
-            <div className="grid grid-cols-2 gap-3 mb-6 flex-grow">
-              {["請求書", "レシート／領収書", "注文書"].map((doc) => (
-                <div
-                  key={doc}
-                  className="bg-secondary text-foreground py-2 px-4 rounded-md text-center text-sm font-medium"
-                >
-                  {doc}
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground text-center mt-auto"></p> {/* 空のまま */}
-          </CardContent>
-        </Card>
-
-        {/* 全文認識/表抽出OCR Card (General) */}
-        <Card className="relative overflow-hidden">
-          <CardHeader className="bg-primary text-primary-foreground p-6 rounded-t-lg">
-            <div className="absolute top-2 right-2 bg-primary-foreground text-primary text-xs font-bold px-3 py-1 rounded-full">
-              事前設定不要
-            </div>
-            <div className="flex flex-col items-center text-center">
-              <h2 className="text-2xl font-bold mb-2">General</h2>
-              <CardTitle className="text-xl font-semibold">全文認識/表抽出OCR</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 bg-card flex flex-col h-full">
-            <CardDescription className="text-muted-foreground mb-4 text-center">
-              帳票内にあるすべての文字をデータ化。表を表のそのまま抽出も可能
-            </CardDescription>
-            <div className="grid grid-cols-2 gap-3 mb-6 flex-grow">
-              {["納品書", "見積書", "勤怠管理表", "書籍", "点検表", "名簿"].map((doc) => (
-                <div
-                  key={doc}
-                  className="bg-secondary text-foreground py-2 px-4 rounded-md text-center text-sm font-medium"
-                >
-                  {doc}
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground text-center mt-auto">※書類や画像のすべての文字・表をデータ化</p>
-          </CardContent>
-        </Card>
+      {/* 特徴 */}
+      <div
+        ref={features.ref}
+        className={`mx-auto max-w-4xl mb-24 transition-all duration-700 ease-out ${features.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
+        <ul className="space-y-12 text-2xl text-left">
+          <li className="flex items-center gap-4"><Lightbulb className="w-10 h-10 text-yellow-400 animate-fade-in" /><b>形式の指定不要</b> パスポート、請求書、契約書、身分証明書など、あらゆる文書に柔軟対応。AIが自動で判別し、構造化します。</li>
+          <li className="flex items-center gap-4"><Zap className="w-10 h-10 text-blue-500 animate-bounce" /><b>最速2秒で変換</b> スキャンからJSON出力まで最短2秒。大量処理にも対応可能な超高速パフォーマンス。</li>
+          <li className="flex items-center gap-4"><LayoutGrid className="w-10 h-10 text-green-500 animate-fade-in" /><b>あらゆる用途に統合可能</b> eKYC、帳票管理、RPA、ドキュメント検索、業務自動化など、様々なユースケースに対応。</li>
+          <li className="flex items-center gap-4"><Globe className="w-10 h-10 text-purple-500 animate-bounce" /><b>多言語・多国籍文書対応</b> 日本語・英語はもちろん、各国の身分証や書類フォーマットに対応。</li>
+        </ul>
       </div>
 
-      {/* Challenging Documents Section */}
-      <div className="w-full py-12 md:py-24 lg:py-32 bg-muted rounded-lg">
-        <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground">こんな帳票も読み取り可能</h2>
-          </div>
-          <div className="mx-auto grid max-w-5xl items-start gap-8 py-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                src: "/placeholder.svg?height=120&width=180",
-                alt: "手書きやシワの寄った紙",
-                text: "手書きやシワの寄った紙",
-              },
-              {
-                src: "/placeholder.svg?height=120&width=180",
-                alt: "汚れた文字・レシート",
-                text: "汚れた文字・レシート",
-              },
-              { src: "/placeholder.svg?height=120&width=180", alt: "表形式", text: "表形式" },
-              { src: "/placeholder.svg?height=120&width=180", alt: "チェックボックス", text: "チェックボックス" },
-              { src: "/placeholder.svg?height=120&width=180", alt: "丸囲み", text: "丸囲み" },
-              {
-                src: "/placeholder.svg?height=120&width=180",
-                alt: "スマートフォンで撮影した文字",
-                text: "スマートフォンで撮影した文字",
-              },
-            ].map((item, index) => (
-              <div key={index} className="grid gap-2 text-center bg-card p-4 rounded-lg shadow-sm">
-                <Image
-                  alt={item.alt}
-                  className="mx-auto aspect-[3/2] overflow-hidden rounded-md object-cover object-center"
-                  height="120"
-                  src={item.src || "/placeholder.svg"}
-                  width="180"
-                />
-                <p className="text-sm text-muted-foreground mt-2">{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* 使い方 */}
+      <div
+        ref={usage.ref}
+        className={`mx-auto max-w-3xl mb-24 transition-all duration-700 ease-out ${usage.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
+        <h2 className="text-3xl font-bold text-foreground mb-8 text-left flex items-center gap-3">
+          <ScanText className="w-8 h-8 text-primary animate-bounce" />使い方はシンプル
+        </h2>
+        <ol className="list-decimal list-inside space-y-8 text-2xl text-muted-foreground text-left">
+          <li className="flex items-center gap-4"><Upload className="w-8 h-8 text-blue-500 animate-bounce" />画像をアップロード</li>
+          <li className="flex items-center gap-4"><ScanText className="w-8 h-8 text-green-500 animate-fade-in" />AIが文書を自動判別＆解析</li>
+          <li className="flex items-center gap-4"><Database className="w-8 h-8 text-purple-500 animate-bounce" />JSON形式で構造化データを返却</li>
+        </ol>
       </div>
 
-      {/* Call to Action Section */}
-      <div className="mt-12 text-center">
-        <h2 className="text-3xl font-bold text-foreground mb-4">お客様のビジネスに合わせたソリューションを</h2>
-        <p className="text-lg text-muted-foreground mb-6">
-          Doge OCRがどのように貴社の業務を効率化できるか、お気軽にご相談ください。
+      {/* 出力例 */}
+      <div
+        ref={example.ref}
+        className={`mx-auto max-w-3xl mb-24 transition-all duration-700 ease-out ${example.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
+        <h2 className="text-3xl font-bold text-foreground mb-8 text-left flex items-center gap-3">
+          <ShieldCheck className="w-8 h-8 text-primary animate-fade-in" />出力例（RFC8259準拠）
+        </h2>
+        <pre className="bg-muted rounded-lg p-8 text-left text-xl overflow-x-auto">
+{`{
+  "document_type": "パスポート",
+  "fields": {
+    "name": "TARO YAMADA",
+    "passport_number": "AB1234567",
+    "nationality": "JAPAN",
+    "expiration_date": "2030-01-01"
+  }
+}`}
+        </pre>
+      </div>
+
+      {/* CTA */}
+      <div
+        ref={cta.ref}
+        className={`mx-auto max-w-3xl text-left mt-24 transition-all duration-700 ease-out ${cta.inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      >
+        <h2 className="text-4xl font-bold text-foreground mb-8 text-left flex items-center gap-3">
+          <CheckCircle className="w-10 h-10 text-green-500 animate-bounce" />今すぐDogeOCRを体験
+        </h2>
+        <p className="text-2xl text-muted-foreground mb-12 text-left">
+          開発者向けAPIも提供中。あらゆるOCR処理を、より高速・柔軟に。
         </p>
         <Button
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 px-6 rounded-lg shadow-md transition-colors"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-4 px-10 rounded-lg shadow-md transition-colors text-2xl flex items-center gap-3"
           asChild
         >
-          <Link href="/contact">お問い合わせ</Link>
+          <Link href="/auth/signin">
+            <ArrowRight className="w-8 h-8 animate-bounce" />無料で試す
+          </Link>
         </Button>
       </div>
     </div>
