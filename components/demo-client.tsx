@@ -270,7 +270,8 @@ export default function DemoClient() {
                 </div>
                 {(localPreview || state.imagePreview) && (
                   <div className="text-xs text-muted-foreground">
-                    画像のみ対応（JPEG, PNG, GIF, WEBP, HEIC）
+                    画像のみ対応（JPEG, JPG, PNG, GIF, WEBP, HEIC）<br />
+                    <span className="text-green-500 font-semibold">※ 4MB以下のみ対応</span>
                   </div>
                 )}
               </div>
@@ -354,82 +355,22 @@ export default function DemoClient() {
             <CardContent className="p-0">
               <Tabs defaultValue="text" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="text">抽出テキスト</TabsTrigger>
-                  <TabsTrigger value="json">JSON出力</TabsTrigger>
+                  <TabsTrigger value="text">テキスト</TabsTrigger>
+                  <TabsTrigger value="json">JSON</TabsTrigger>
                   <TabsTrigger value="metadata">詳細情報</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="text" className="p-6">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-foreground">内容の説明</h3>
                     <div className="bg-muted rounded-lg p-4 border border-border">
                       <div className="text-sm text-foreground overflow-auto whitespace-pre-wrap break-words">
                         {ocrResult.error ? (
                           <span className="text-red-400">{ocrResult.error}</span>
                         ) : (
-                          // 構造化データがある場合は内容説明を表示、ない場合は元のテキストを表示
-                          ocrResult.structuredData ? (
-                            <div className="space-y-4">
-                              {/* 文書の内容説明 */}
-                              {ocrResult.structuredData.content_description && (
-                                <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
-                                  <h4 className="text-primary font-medium mb-2">文書の内容</h4>
-                                  <p className="text-foreground">
-                                    {ocrResult.structuredData.content_description}
-                                  </p>
-                                </div>
-                              )}
-                              
-                              {/* 主要な情報の表示 */}
-                              {ocrResult.structuredData.extracted_data && (
-                                <div className="space-y-2">
-                                  <h4 className="text-foreground font-medium">主要な情報:</h4>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {ocrResult.structuredData.extracted_data.name && (
-                                      <div className="bg-secondary rounded p-2">
-                                        <span className="text-muted-foreground text-sm">氏名:</span>
-                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.name}</span>
-                                      </div>
-                                    )}
-                                    {ocrResult.structuredData.extracted_data.license_number && (
-                                      <div className="bg-secondary rounded p-2">
-                                        <span className="text-muted-foreground text-sm">免許証番号:</span>
-                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.license_number}</span>
-                                      </div>
-                                    )}
-                                    {ocrResult.structuredData.extracted_data.date_of_birth && (
-                                      <div className="bg-secondary rounded p-2">
-                                        <span className="text-muted-foreground text-sm">生年月日:</span>
-                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.date_of_birth}</span>
-                                      </div>
-                                    )}
-                                    {ocrResult.structuredData.extracted_data.expiration_date && (
-                                      <div className="bg-secondary rounded p-2">
-                                        <span className="text-muted-foreground text-sm">有効期限:</span>
-                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.expiration_date}</span>
-                                      </div>
-                                    )}
-                                    {ocrResult.structuredData.extracted_data.address && (
-                                      <div className="bg-secondary rounded p-2 md:col-span-2">
-                                        <span className="text-muted-foreground text-sm">住所:</span>
-                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.address}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {/* 処理に関する注意事項 */}
-                              {ocrResult.structuredData.processing_notes && (
-                                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                                  <p className="text-yellow-600 dark:text-yellow-400 text-sm">
-                                    <strong>注意事項:</strong> {ocrResult.structuredData.processing_notes}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
+                          ocrResult.structuredData && ocrResult.structuredData.content_description ? (
+                            <span>{ocrResult.structuredData.content_description}</span>
                           ) : (
-                            ocrResult.extractedText
+                            <span className="text-muted-foreground">説明文はありません</span>
                           )
                         )}
                       </div>
@@ -439,35 +380,17 @@ export default function DemoClient() {
 
                 <TabsContent value="json" className="p-6">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-foreground">JSON形式の出力</h3>
                     <div className="bg-muted rounded-lg p-4 border border-border">
                       <pre className="text-sm text-foreground overflow-auto whitespace-pre-wrap break-words">
                         {ocrResult.error ? (
                           <span className="text-red-400">{ocrResult.error}</span>
-                        ) : ocrResult.structuredData ? (
-                          JSON.stringify(ocrResult.structuredData, null, 2)
+                        ) : ocrResult.structuredData && ocrResult.structuredData.extracted_data ? (
+                          JSON.stringify(ocrResult.structuredData.extracted_data, null, 2)
                         ) : (
-                          <span className="text-yellow-600 dark:text-yellow-400">
-                            構造化されたJSONデータは利用できません。
-                            {'\n\n'}元のテキスト出力:
-                            {'\n'}{ocrResult.extractedText}
-                          </span>
+                          <span className="text-yellow-600 dark:text-yellow-400">有効なextracted_dataがありません</span>
                         )}
                       </pre>
                     </div>
-                    {ocrResult.structuredData && (
-                      <div className="flex justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            navigator.clipboard.writeText(JSON.stringify(ocrResult.structuredData, null, 2))
-                          }}
-                        >
-                          JSONをコピー
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 </TabsContent>
 
