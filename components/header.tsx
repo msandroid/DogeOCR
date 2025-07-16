@@ -1,22 +1,32 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { SheetTrigger, SheetContent, Sheet } from "@/components/ui/sheet"
-import { Menu } from "lucide-react"
+import { Menu, Settings } from "lucide-react"
 import Image from "next/image"
 import AuthButton from "@/components/auth-button"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function Header() {
   return (
     <header className="flex h-20 w-full shrink-0 items-center px-4 md:px-6 bg-background border-b border-border">
       <Link className="mr-6 flex items-center" href="/">
-        <Image
-          src="/images/icon.png" // Use the provided icon.png
-          alt="Doge Works Logo"
-          width={40}
-          height={40}
-          className="rounded-full"
-        />
-        <span className="ml-2 text-xl font-bold text-primary font-rubik-one">Doge Works</span> {/* フォントを適用 */}
+        <div className="relative w-10 h-10">
+          <Image
+            src="/images/icon 2.png"
+            alt="Doge Works Logo"
+            width={40}
+            height={40}
+            className="rounded-full dark:opacity-0 transition-opacity duration-200"
+          />
+          <Image
+            src="/images/icon 1.png"
+            alt="Doge Works Logo"
+            width={40}
+            height={40}
+            className="absolute inset-0 rounded-full opacity-0 dark:opacity-100 transition-opacity duration-200"
+          />
+        </div>
+        <span className="ml-2 text-xl font-bold text-foreground font-rubik-one">Doge Works</span> {/* フォントを適用 */}
       </Link>
       <nav className="ml-auto hidden gap-4 sm:gap-6 md:flex">
         <Link
@@ -42,7 +52,14 @@ export default function Header() {
         </Link>
       </nav>
       <div className="ml-auto flex items-center gap-4">
-        <div className="hidden md:block">
+        <div className="hidden md:flex items-center gap-2">
+          <ThemeToggle />
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/settings">
+              <Settings className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">設定</span>
+            </Link>
+          </Button>
           <AuthButton />
         </div>
         <Sheet>
@@ -54,14 +71,23 @@ export default function Header() {
           </SheetTrigger>
           <SheetContent side="right" className="bg-background">
             <Link className="mr-6 flex items-center" href="/">
-              <Image
-                src="/images/icon.png" // Use the provided icon.png
-                alt="Doge Works Logo"
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
-              <span className="ml-2 text-xl font-bold text-primary font-rubik-one">Doge Works</span>{" "}
+              <div className="relative w-10 h-10">
+                <Image
+                  src="/images/icon 2.png"
+                  alt="Doge Works Logo"
+                  width={40}
+                  height={40}
+                  className="rounded-full dark:opacity-0 transition-opacity duration-200"
+                />
+                <Image
+                  src="/images/icon 1.png"
+                  alt="Doge Works Logo"
+                  width={40}
+                  height={40}
+                  className="absolute inset-0 rounded-full opacity-0 dark:opacity-100 transition-opacity duration-200"
+                />
+              </div>
+              <span className="ml-2 text-xl font-bold text-foreground font-rubik-one">Doge Works</span>{" "}
               {/* フォントを適用 */}
             </Link>
             <div className="grid gap-2 py-6">
@@ -89,8 +115,14 @@ export default function Header() {
               <Link className="flex w-full items-center py-2 text-lg font-semibold text-primary font-bold" href="/demo">
                 デモ
               </Link>
+              <Link className="flex w-full items-center py-2 text-lg font-semibold text-muted-foreground" href="/settings">
+                設定
+              </Link>
             </div>
-            <div className="mt-4 px-4">
+            <div className="mt-4 px-4 space-y-2">
+              <div className="flex justify-center">
+                <ThemeToggle />
+              </div>
               <AuthButton />
             </div>
           </SheetContent>

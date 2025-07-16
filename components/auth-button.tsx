@@ -7,8 +7,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Link from "next/link"
 
 export default function AuthButton() {
   const { data: session, status } = useSession()
@@ -39,6 +41,18 @@ export default function AuthButton() {
               </p>
             </div>
           </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href="/dashboard">
+              ダッシュボード
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href="/billing">
+              請求管理
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             className="cursor-pointer"
             onSelect={() => signOut({ callbackUrl: "/" })}

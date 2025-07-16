@@ -2,104 +2,19 @@
 
 import { z } from "zod"
 
-// 座標情報の型定義
-const coordinateSchema = z.object({
-  x: z.number().describe("左上角のX座標"),
-  y: z.number().describe("左上角のY座標"),
-  width: z.number().describe("幅"),
-  height: z.number().describe("高さ"),
+// 基本的なOCR結果の型定義
+const basicOcrOutputSchema = z.object({
+  extractedText: z.string().describe("抽出されたテキスト"),
+  documentType: z.string().optional().describe("文書種別"),
+  processingTime: z.number().describe("処理時間（ミリ秒）"),
+  apiVersion: z.string().default("v1.0"),
+  confidence: z.number().min(0).max(1).optional().describe("認識率"),
 })
-
-// テキストブロックの型定義
-const textBlockSchema = z.object({
-  text: z.string().describe("抽出されたテキスト"),
-  coordinates: coordinateSchema.describe("テキストブロックの座標情報"),
-  confidence: z.number().min(0).max(100).describe("認識信頼度スコア（0-100）"),
-  language: z.string().optional().describe("検出された言語"),
-  fontSize: z.number().optional().describe("推定フォントサイズ"),
-  fontStyle: z.string().optional().describe("フォントスタイル（bold, italic等）"),
-})
-
-// 拡張されたOCR結果の型定義
-const enhancedOcrOutputSchema = z.object({
-  language: z.string().optional().describe("検出された主要言語"),
-  type: z.string().optional().describe("文書の種類"),
-  extractedText: z.string().describe("抽出された全テキスト"),
-  textBlocks: z.array(textBlockSchema).optional().describe("座標付きテキストブロック"),
-  structuredData: z.any().optional().describe("構造化されたデータ"),
-  result: z.enum(["success", "uncertain"]).optional().describe("抽出結果の信頼性"),
-  overallConfidence: z.number().min(0).max(100).optional().describe("全体の認識信頼度"),
-  imageInfo: z.object({
-    width: z.number().optional().describe("画像の幅"),
-    height: z.number().optional().describe("画像の高さ"),
-    rotation: z.number().optional().describe("推定回転角度"),
-    skew: z.number().optional().describe("スキュー角度"),
-  }).optional(),
-  processingTime: z.number().optional().describe("処理時間（ミリ秒）"),
-})
-
-const ENHANCED_MULTILINGUAL_OCR_PROMPT = `あなたはOCR結果からテキスト情報を構造化するAIです。
-
-この画像は、何らかの文書または帳票の写真です。
-以下のルールに従って、文書内容を解析・分類し、必要情報をJSON形式で出力してください。
-
-【1】ステップ1：文書種別を自動で推定する
-以下のカテゴリからもっとも近い文書種別を自動で1つ選んでください。
-可能な種別：
-- 身分証（例：運転免許証、マイナンバーカード、在留カードなど）
-- 請求書
-- 注文書
-- 納品書
-- 領収書／レシート
-- 申込書
-- 報告書
-- アンケート
-- 勤怠表
-- 名簿
-- 点検表
-- 書籍のページ（文章主体）
-- 不明（分類できない場合）
-
-【2】ステップ2：文書構造を分析し、適切に構造化する
-- 可能な限り、名前、日付、金額、住所、会社名、商品名、数量などの意味を特定し、それぞれのkeyに分けてJSON出力してください。
-- 表が含まれる場合、各セルのテキストをそのまま配列形式で格納してください。
-- 丸囲み、チェックマークも読み取って反映してください（例："consent": true）。
-
-【3】ステップ3：出力形式
-以下のテンプレート形式を参考に、該当情報のみ埋めてください。不要なkeyは省略可能です。
-
-\`\`\`json
-{
-  "type": "請求書",
-  "date": "2024-07-01",
-  "vendor": "株式会社〇〇",
-  "items": [
-    { "name": "商品A", "qty": 2, "price": 1200 },
-    { "name": "商品B", "qty": 1, "price": 980 }
-  ],
-  "total": 3380,
-  "tax": 10,
-  "address": "東京都新宿区...",
-  "name": "山田 太郎",
-  "dob": "1990-01-01",
-  "consent": true,
-  "extractedText": "抽出された全テキスト",
-  "textBlocks": [
-    {
-      "text": "抽出されたテキスト",
-      "coordinates": {"x": 100, "y": 50, "width": 200, "height": 30},
-      "confidence": 95
-    }
-  ],
-  "result": "success",
-  "overallConfidence": 96
-}
-\`\`\``
 
 export async function handleImageUpload(
-  prevState: { imagePreview: string | null; ocrResult: object | null },
+  prevState: { imagePreview: string | null; ocrResult: any },
   formData: FormData,
-) {
+): Promise<{ imagePreview: string | null; ocrResult: any }> {
   const startTime = Date.now()
   
   const fireworksApiKey = process.env.FIREWORKS_API_KEY
@@ -108,6 +23,7 @@ export async function handleImageUpload(
       imagePreview: null,
       ocrResult: {
         error: "APIキーが設定されていません。環境変数 FIREWORKS_API_KEY を確認してください。",
+        processingTime: Date.now() - startTime,
       },
     }
   }
@@ -116,37 +32,60 @@ export async function handleImageUpload(
   const userPrompt = formData.get("chatPrompt") as string | null
 
   if (!file || file.size === 0) {
-    return { imagePreview: null, ocrResult: { error: "画像ファイルが提供されていません。" } }
+    return { 
+      imagePreview: null, 
+      ocrResult: { 
+        error: "画像ファイルが提供されていません。",
+        processingTime: Date.now() - startTime,
+      } 
+    }
   }
 
   // 画像ファイルのみを受け付ける
   if (!file.type.startsWith('image/')) {
     return { 
       imagePreview: null, 
-      ocrResult: { error: "画像ファイルのみ対応しています。JPG、PNG、GIF、WEBP形式の画像をアップロードしてください。" } 
+      ocrResult: { 
+        error: "画像ファイルのみ対応しています。JPG、PNG、GIF、WEBP形式の画像をアップロードしてください。",
+        processingTime: Date.now() - startTime,
+      } 
     }
   }
 
   const arrayBuffer = await file.arrayBuffer()
   const buffer = Buffer.from(arrayBuffer)
   const imagePreview = `data:${file.type};base64,${buffer.toString("base64")}`
-  const imageUrl = imagePreview
 
-  // 拡張された多言語OCRプロンプトを使用
-  let promptText = ENHANCED_MULTILINGUAL_OCR_PROMPT
+  // プロンプト
+  let promptText = `この画像から文字を読み取り、以下の形式で厳密にRFC 8259に準拠したJSONデータで出力してください：
+{
+  "content_description": "この文書の内容を説明してください",
+  "extracted_data": {
+    "key1": "value1",
+    "key2": "value2",
+    "key3": "value3",
+  },
+  "document_type": "文書の種類（例：運転免許証、パスポート、身分証明書、マイナンバーカード、請求書、領収書、など）",
+  "confidence": 0.95,
+  "processing_time": 1000,
+  "api_version": "v1.0",
+}
+必ず有効なJSON形式で出力してください。値が不明な場合は null を使用してください。`
   
+  // チャット欄の入力があれば追加プロンプトとして使用
   if (userPrompt && userPrompt.trim().length > 0) {
-    promptText += `\n\n【追加の指示】\n${userPrompt.trim()}\n\n上記の追加指示も考慮して、詳細な座標情報と認識率を含む分析を実行してください。`
+    promptText = userPrompt.trim()
   }
 
+  // 公式APIの仕様に合わせたリクエストボディ
   const requestBody = {
     model: "accounts/fireworks/models/firesearch-ocr-v6",
-    max_tokens: 8192, // より多くのトークンで詳細な結果を取得
-    temperature: 0.1, // より一貫した結果のため低めに設定
+    max_tokens: 1024,
     top_p: 1,
     top_k: 40,
     presence_penalty: 0,
     frequency_penalty: 0,
+    temperature: 0.34,
     messages: [
       {
         role: "user",
@@ -157,7 +96,9 @@ export async function handleImageUpload(
           },
           {
             type: "image_url",
-            image_url: { url: imageUrl },
+            image_url: {
+              url: imagePreview,
+            },
           },
         ],
       },
@@ -184,61 +125,65 @@ export async function handleImageUpload(
 
     const data = await response.json()
     const rawContent = data.choices?.[0]?.message?.content
-    let extractedTextString = ""
-    let structuredData = null
+    const processingTime = Date.now() - startTime
 
     if (typeof rawContent === "string") {
-      extractedTextString = rawContent
-      
-      // JSONブロックを抽出して構造化データとして解析を試行
-      const jsonMatch = rawContent.match(/```json\s*([\s\S]*?)\s*```/i) || 
-                       rawContent.match(/\{[\s\S]*\}/i)
-      
-      if (jsonMatch) {
-        try {
-          structuredData = JSON.parse(jsonMatch[1] || jsonMatch[0])
-          
-          // 処理時間を追加
-          if (structuredData && typeof structuredData === 'object') {
-            structuredData.processingTime = Date.now() - startTime
-          }
-        } catch (parseError) {
-          console.log("JSON解析に失敗しました:", parseError)
+      // JSONレスポンスを解析しようとする
+      let parsedJson = null
+      try {
+        // JSONブロックを抽出（```json ... ``` の形式に対応）
+        const jsonMatch = rawContent.match(/```json\s*([\s\S]*?)\s*```/) || 
+                         rawContent.match(/```\s*([\s\S]*?)\s*```/) ||
+                         [null, rawContent]
+        
+        if (jsonMatch && jsonMatch[1]) {
+          parsedJson = JSON.parse(jsonMatch[1].trim())
+        } else {
+          parsedJson = JSON.parse(rawContent.trim())
         }
+      } catch (jsonError) {
+        // JSON解析に失敗した場合は元のテキストを返す
+        parsedJson = null
       }
-    } else if (typeof rawContent === "object" && rawContent !== null) {
-      extractedTextString = JSON.stringify(rawContent, null, 2)
-      structuredData = rawContent
-      if (structuredData && typeof structuredData === 'object') {
-        structuredData.processingTime = Date.now() - startTime
+
+      if (parsedJson) {
+        // 構造化されたJSONデータが得られた場合
+        ocrResult = {
+          extractedText: JSON.stringify(parsedJson, null, 2),
+          structuredData: parsedJson,
+          documentType: parsedJson.document_type || "不明",
+          processingTime,
+          apiVersion: "v1.0",
+          confidence: parsedJson.confidence || 0.85,
+        }
+      } else {
+        // JSON解析に失敗した場合は元のテキストを返す
+        const finalOcrResult = {
+          extractedText: rawContent,
+          documentType: "不明",
+          processingTime,
+          apiVersion: "v1.0",
+          confidence: 0.85,
+        }
+
+        const validationResult = basicOcrOutputSchema.safeParse(finalOcrResult)
+        
+        ocrResult = validationResult.success
+          ? validationResult.data
+          : {
+              error: "OCR結果の形式が期待と異なります。",
+              details: validationResult.error.flatten(),
+              extractedText: rawContent,
+              processingTime,
+            }
       }
     } else {
-      extractedTextString = String(rawContent)
+      ocrResult = {
+        error: "APIからの応答が期待された形式ではありません。",
+        processingTime,
+        rawApiResponse: data,
+      }
     }
-
-    const finalOcrResult = {
-      extractedText: extractedTextString,
-      ...(structuredData && { structuredData }),
-      ...(structuredData?.language && { language: structuredData.language }),
-      ...(structuredData?.type && { type: structuredData.type }),
-      ...(structuredData?.result && { result: structuredData.result }),
-      ...(structuredData?.textBlocks && { textBlocks: structuredData.textBlocks }),
-      ...(structuredData?.overallConfidence && { overallConfidence: structuredData.overallConfidence }),
-      ...(structuredData?.imageInfo && { imageInfo: structuredData.imageInfo }),
-      processingTime: Date.now() - startTime,
-    }
-
-    const validationResult = enhancedOcrOutputSchema.safeParse(finalOcrResult)
-
-    ocrResult = validationResult.success
-      ? validationResult.data
-      : {
-          error: "OCR結果の形式が期待と異なります。",
-          details: validationResult.error.flatten(),
-          rawApiResponse: data,
-          extractedText: extractedTextString,
-          processingTime: Date.now() - startTime,
-        }
 
   } catch (error: any) {
     ocrResult = {

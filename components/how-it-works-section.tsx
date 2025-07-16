@@ -1,4 +1,5 @@
 import { ScanText, Upload, Database, CheckCircle } from "lucide-react"
+import Image from "next/image"
 
 export default function HowItWorksSection() {
   return (
@@ -15,51 +16,17 @@ export default function HowItWorksSection() {
             </p>
           </div>
         </div>
-        <div className="mx-auto grid max-w-5xl items-start gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="grid gap-1 text-center">
-            <div className="flex justify-center mb-4">
-              <Upload className="h-12 w-12 text-primary" /> {/* Changed from text-green-600 */}
-            </div>
-            <h3 className="text-xl font-bold text-foreground">1. 文書をアップロード</h3>
-            {/* Changed from text-gray-900 */}
-            <p className="text-sm text-muted-foreground">
-              {/* Changed from text-gray-700 */}
-              請求書、レシート、契約書など、あらゆる種類の文書をアップロードします。画像ファイル（JPG,
-              PNG）やPDFに対応しています。
-            </p>
-          </div>
-          <div className="grid gap-1 text-center">
-            <div className="flex justify-center mb-4">
-              <ScanText className="h-12 w-12 text-primary" /> {/* Changed from text-green-600 */}
-            </div>
-            <h3 className="text-xl font-bold text-foreground">2. AIがテキストを認識</h3>
-            {/* Changed from text-gray-900 */}
-            <p className="text-sm text-muted-foreground">
-              {/* Changed from text-gray-700 */}
-              VisonAIとOCRの技術が、文書内のテキストを高精度で認識し、構造化されたデータに変換します。
-            </p>
-          </div>
-          <div className="grid gap-1 text-center">
-            <div className="flex justify-center mb-4">
-              <Database className="h-12 w-12 text-primary" /> {/* Changed from text-green-600 */}
-            </div>
-            <h3 className="text-xl font-bold text-foreground">3. データを抽出・活用</h3>
-            {/* Changed from text-gray-900 */}
-            <p className="text-sm text-muted-foreground">
-              {/* Changed from text-gray-700 */}
-              抽出されたデータは、JSON形式などで提供され、既存のシステムやデータベースに簡単に統合して活用できます。
-            </p>
-          </div>
-          <div className="grid gap-1 text-center">
-            <div className="flex justify-center mb-4">
-              <CheckCircle className="h-12 w-12 text-primary" /> {/* Changed from text-green-600 */}
-            </div>
-            <h3 className="text-xl font-bold text-foreground">4. 業務効率化</h3> {/* Changed from text-gray-900 */}
-            <p className="text-sm text-muted-foreground">
-              {/* Changed from text-gray-700 */}
-              手作業によるデータ入力が不要になり、時間とコストを大幅に削減。業務プロセスを自動化し、生産性を向上させます。
-            </p>
-          </div>
+        
+        {/* 画像表示 */}
+        <div className="mx-auto max-w-5xl py-12 flex justify-center">
+          <Image
+            src="/images/doge-ocr-api.png"
+            alt="Doge OCR APIの仕組み"
+            width={800}
+            height={600}
+            className="rounded-lg shadow-lg"
+            priority
+          />
         </div>
       </div>
     </section>

@@ -30,7 +30,7 @@ export default function RootLayout({
     <html lang="ja" suppressHydrationWarning className={rubikOne.variable}>
       {/* 余分な空白文字を削除 */}
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <SessionProvider>
             <Header />
             {children}

@@ -1,64 +1,38 @@
 "use client"
 
-import { useActionState } from "react"
 import { handleImageUpload } from "@/app/actions/demo"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useRef, useState } from "react"
-import { Send, Image as ImageIcon, Globe, FileText, CheckCircle, AlertCircle, Plus, Clock, Target, Layers, X, Eye, EyeOff } from "lucide-react"
+import { useRef, useState, useTransition } from "react"
+import { Send, Image as ImageIcon, FileText, CheckCircle, AlertCircle, Plus, Clock, Target, X } from "lucide-react"
 import Image from "next/image"
 
-interface Coordinate {
-  x: number
-  y: number
-  width: number
-  height: number
-}
-
-interface TextBlock {
-  text: string
-  coordinates: Coordinate
-  confidence: number
-  language?: string
-  fontSize?: number
-  fontStyle?: string
-}
-
-interface ImageInfo {
-  width?: number
-  height?: number
-  rotation?: number
-  skew?: number
-}
-
 interface OcrResult {
-  language?: string
-  type?: string
   extractedText: string
-  textBlocks?: TextBlock[]
   structuredData?: any
-  result?: "success" | "uncertain"
-  overallConfidence?: number
-  imageInfo?: ImageInfo
+  documentType?: string
   processingTime?: number
+  apiVersion?: string
+  confidence?: number
   error?: string
 }
 
 export default function DemoClient() {
-  const [state, sendAction, isPending] = useActionState(handleImageUpload, {
+  const [isPending, startTransition] = useTransition()
+  const [state, setState] = useState<{
+    imagePreview: string | null
+    ocrResult: OcrResult | null
+  }>({
     imagePreview: null,
     ocrResult: null,
   })
 
   const formRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const imageRef = useRef<HTMLImageElement>(null)
   const [prompt, setPrompt] = useState("")
-  const [showOverlay, setShowOverlay] = useState(true)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [localPreview, setLocalPreview] = useState<string | null>(null)
 
@@ -93,9 +67,6 @@ export default function DemoClient() {
         setLocalPreview(event.target?.result as string)
       }
       reader.readAsDataURL(file)
-      
-      // 画像選択後は自動送信しない（送信ボタンを押してもらう）
-      // formRef.current?.requestSubmit()
     }
   }
 
@@ -107,8 +78,9 @@ export default function DemoClient() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    // Server Actionが正常に動作するかデバッグ
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
     console.log('Form submitted', { 
       selectedFile: selectedFile?.name, 
       prompt, 
@@ -117,55 +89,43 @@ export default function DemoClient() {
     
     // ファイルまたはプロンプトがない場合は送信を停止
     if (!selectedFile && !prompt.trim()) {
-      e.preventDefault()
       console.log('No file or prompt, preventing submission')
       return
     }
+
+    const formData = new FormData(e.currentTarget)
+    if (selectedFile) {
+      formData.set('image', selectedFile)
+    }
+    if (prompt.trim()) {
+      formData.set('chatPrompt', prompt.trim())
+    }
+
+    startTransition(async () => {
+      try {
+        const result = await handleImageUpload(state, formData)
+        setState(result)
+      } catch (error) {
+        console.error('Upload error:', error)
+        setState(prev => ({
+          ...prev,
+          ocrResult: {
+            extractedText: '',
+            error: `処理中にエラーが発生しました: ${error instanceof Error ? error.message : String(error)}`
+          }
+        }))
+      }
+    })
   }
 
   const ocrResult = state.ocrResult as OcrResult | null
-
-  // 座標オーバーレイコンポーネント
-  const CoordinateOverlay = ({ textBlocks, imageElement }: { textBlocks: TextBlock[], imageElement: HTMLImageElement | null }) => {
-    if (!textBlocks || !imageElement) return null
-
-    const imageRect = imageElement.getBoundingClientRect()
-    const imageNaturalWidth = imageElement.naturalWidth
-    const imageNaturalHeight = imageElement.naturalHeight
-    const imageDisplayWidth = imageElement.clientWidth
-    const imageDisplayHeight = imageElement.clientHeight
-
-    const scaleX = imageDisplayWidth / imageNaturalWidth
-    const scaleY = imageDisplayHeight / imageNaturalHeight
-
-    return (
-      <div className="absolute inset-0 pointer-events-none">
-        {textBlocks.map((block, index) => (
-          <div
-            key={index}
-            className="absolute border-2 border-blue-400 bg-blue-400/10 backdrop-blur-sm"
-            style={{
-              left: `${block.coordinates.x * scaleX}px`,
-              top: `${block.coordinates.y * scaleY}px`,
-              width: `${block.coordinates.width * scaleX}px`,
-              height: `${block.coordinates.height * scaleY}px`,
-            }}
-          >
-            <div className="absolute -top-6 left-0 bg-blue-600 text-white text-xs px-1 rounded">
-              {block.confidence}%
-            </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
 
   // OCR実行中またはエラー時のdoge画像表示コンポーネント
   const DogeStatusDisplay = ({ isLoading, error }: { isLoading: boolean, error?: string }) => {
     if (!isLoading && !error) return null
     
     return (
-      <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10 rounded-lg">
+      <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10 rounded-lg">
         <div className="flex flex-col items-center space-y-4 text-center">
           <div className="relative">
             <Image
@@ -176,20 +136,16 @@ export default function DemoClient() {
               className={`rounded-full ${isLoading ? 'animate-pulse' : ''}`}
               priority
             />
-            {isLoading && (
-              <div className="absolute inset-0 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-            )}
           </div>
-          <div className="text-white">
+          <div className="text-foreground">
             {isLoading ? (
               <div className="space-y-2">
-                <p className="text-lg font-medium">Such OCR processing...</p>
-                <p className="text-sm text-gray-300">Much analyze, very text recognition</p>
+                <p className="text-lg font-medium">OCR processing...</p>
               </div>
             ) : error ? (
               <div className="space-y-2">
-                <p className="text-lg font-medium text-red-400">Much error, such sad</p>
-                <p className="text-sm text-gray-300">{error}</p>
+                <p className="text-lg font-medium text-red-500">Much error, such sad</p>
+                <p className="text-sm text-muted-foreground">{error}</p>
               </div>
             ) : null}
           </div>
@@ -199,26 +155,26 @@ export default function DemoClient() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       {/* メインタイトル */}
       {!state.imagePreview && !ocrResult && !localPreview && (
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-light text-white mb-4">Which document would you like to scan?</h1>
+          <h1 className="text-4xl font-light text-foreground mb-4">Which document would you like to scan?</h1>
         </div>
       )}
 
       {/* ファイルプレビュー表示 */}
       {localPreview && (
         <div className="w-full max-w-2xl mb-6">
-          <div className="bg-gray-950 rounded-2xl border border-gray-800 p-4">
+          <div className="bg-card rounded-2xl border border-border p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
                 <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span className="text-sm text-gray-300">ファイルアップロード完了</span>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <span className="text-sm text-muted-foreground">ファイルアップロード完了</span>
                 </div>
                 {selectedFile && (
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-muted-foreground">
                     {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
                   </div>
                 )}
@@ -228,12 +184,12 @@ export default function DemoClient() {
                 variant="ghost"
                 size="sm"
                 onClick={handleClearFile}
-                className="h-6 w-6 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-accent"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <div className="relative bg-gray-900 rounded-lg overflow-hidden">
+            <div className="relative bg-muted rounded-lg overflow-hidden">
               <img 
                 src={localPreview} 
                 alt="アップロードされた画像" 
@@ -247,8 +203,8 @@ export default function DemoClient() {
 
       {/* チャット風入力フォーム */}
       <div className="w-full max-w-2xl">
-        <form ref={formRef} action={sendAction} onSubmit={handleSubmit}>
-          <div className="relative bg-gray-950 rounded-2xl border border-gray-800">
+        <form ref={formRef} onSubmit={handleSubmit}>
+          <div className="relative bg-card rounded-2xl border border-border">
             <div className="flex items-center p-4">
               {/* プラスボタン */}
               <Button
@@ -257,7 +213,7 @@ export default function DemoClient() {
                 size="sm"
                 onClick={handleFileUpload}
                 disabled={isPending}
-                className="mr-3 h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+                className="mr-3 h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-accent"
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -268,8 +224,8 @@ export default function DemoClient() {
                 name="chatPrompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Ask anything"
-                className="flex-1 bg-transparent border-none text-gray-300 placeholder-gray-500 focus:ring-0 focus-visible:ring-0 text-base"
+                placeholder="Ask anything or describe what you want to extract..."
+                className="flex-1 bg-transparent border-none text-foreground placeholder-muted-foreground focus:ring-0 focus-visible:ring-0 text-base"
                 disabled={isPending}
               />
 
@@ -278,7 +234,7 @@ export default function DemoClient() {
                 type="submit"
                 disabled={isPending || (!selectedFile && !prompt.trim())}
                 size="sm"
-                className="ml-3 h-8 w-8 p-0 bg-gray-800 hover:bg-gray-700 text-white rounded-lg disabled:opacity-50"
+                className="ml-3 h-8 w-8 p-0 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg disabled:opacity-50"
               >
                 {isPending ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -301,7 +257,7 @@ export default function DemoClient() {
 
             {/* ツールバー */}
             <div className="px-4 pb-3">
-              <div className="flex items-center justify-between text-sm text-gray-400">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center space-x-1">
                   {selectedFile && (
                     <div className="flex items-center space-x-2">
@@ -313,7 +269,7 @@ export default function DemoClient() {
                   )}
                 </div>
                 {(localPreview || state.imagePreview) && (
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     画像のみ対応（JPEG, PNG, GIF, WEBP, HEIC）
                   </div>
                 )}
@@ -325,47 +281,64 @@ export default function DemoClient() {
 
       {/* 結果表示エリア */}
       <div className="w-full max-w-6xl mt-8 space-y-6">
-        {/* 総合統計情報 */}
+        {/* 統計情報 */}
         {ocrResult && !ocrResult.error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-black border-gray-800">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-2">
-                  <Target className="h-4 w-4 text-green-400" />
-                  <span className="text-sm text-gray-400">全体信頼度</span>
+                  <Target className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-muted-foreground">信頼度</span>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-lg font-semibold text-white">
-                    {ocrResult.overallConfidence ? `${ocrResult.overallConfidence}%` : 'N/A'}
-                  </p>
-                  {ocrResult.overallConfidence && (
-                    <Progress value={ocrResult.overallConfidence} className="h-2" />
-                  )}
+                <p className="text-lg font-semibold text-foreground">
+                  {ocrResult.confidence ? `${Math.round(ocrResult.confidence * 100)}%` : 'N/A'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4 text-yellow-500" />
+                  <span className="text-sm text-muted-foreground">処理時間</span>
                 </div>
+                <p className="text-lg font-semibold text-foreground">
+                  {ocrResult.processingTime ? `${(ocrResult.processingTime / 1000).toFixed(2)}秒` : 'N/A'}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm text-muted-foreground">文書種別</span>
+                </div>
+                <p className="text-lg font-semibold text-foreground">
+                  {ocrResult.documentType || '不明'}
+                </p>
               </CardContent>
             </Card>
           </div>
         )}
 
-        {/* プレビューエリア（座標オーバーレイ付き） */}
+        {/* プレビューエリア */}
         {state.imagePreview && (
-          <Card className="bg-gray-800 border-gray-800">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between text-white">
-                <div className="flex items-center space-x-2">
-                  <ImageIcon className="h-5 w-5" />
-                  <span>画像解析結果</span>
-                </div>
+              <CardTitle className="flex items-center space-x-2 text-foreground">
+                <ImageIcon className="h-5 w-5" />
+                <span>画像解析結果</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="relative">
                 <img
-                  ref={imageRef}
                   src={state.imagePreview}
                   alt="Preview"
-                  className="w-full max-h-[500px] object-contain rounded-lg border border-gray-600"
+                  className="w-full max-h-[500px] object-contain rounded-lg border border-border"
                 />
+                
                 {/* エラー時のdoge表示 */}
                 {ocrResult?.error && (
                   <DogeStatusDisplay isLoading={false} error={ocrResult.error} />
@@ -375,115 +348,174 @@ export default function DemoClient() {
           </Card>
         )}
 
-        {/* 詳細結果タブ */}
+        {/* 結果タブ */}
         {ocrResult && (
-          <Card className="bg-black border-gray-800">
+          <Card>
             <CardContent className="p-0">
-              <Tabs defaultValue="structured" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-gray-800">
-                  <TabsTrigger value="structured" className="text-gray-300">構造化データ</TabsTrigger>
+              <Tabs defaultValue="text" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="text">抽出テキスト</TabsTrigger>
+                  <TabsTrigger value="json">JSON出力</TabsTrigger>
+                  <TabsTrigger value="metadata">詳細情報</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="structured" className="p-6">
+                <TabsContent value="text" className="p-6">
                   <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="h-5 w-5 text-white" />
-                      <h3 className="text-lg font-semibold text-white">構造化データ</h3>
-                      {ocrResult.result && (
-                        <Badge className={ocrResult.result === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"}>
-                          {ocrResult.result === "success" ? (
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                          ) : (
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                          )}
-                          {ocrResult.result}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="bg-black rounded-lg p-4">
-                      <pre className="text-sm text-gray-300 overflow-auto whitespace-pre-wrap break-words">
-                        {ocrResult.structuredData ? 
-                          JSON.stringify(ocrResult.structuredData, null, 2) : 
-                          'No structured data available'
-                        }
-                      </pre>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="textblocks" className="p-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">座標付きテキストブロック</h3>
-                    {ocrResult.textBlocks ? (
-                      <div className="space-y-3">
-                        {ocrResult.textBlocks.map((block, index) => (
-                          <div key={index} className="bg-black rounded-lg p-4 border border-gray-800">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-white font-medium">Block {index + 1}</span>
-                              <div className="flex space-x-2">
-                                <Badge className="bg-blue-600 text-white">
-                                  信頼度: {block.confidence}%
-                                </Badge>
-                                {block.language && (
-                                  <Badge className="bg-purple-600 text-white">
-                                    {block.language}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <p className="text-gray-300 mb-2">"{block.text}"</p>
-                            <div className="text-sm text-gray-400">
-                              座標: ({block.coordinates.x}, {block.coordinates.y}) 
-                              サイズ: {block.coordinates.width} × {block.coordinates.height}
-                              {block.fontSize && ` | フォントサイズ: ${block.fontSize}px`}
-                              {block.fontStyle && ` | スタイル: ${block.fontStyle}`}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-400">座標情報が利用できません</p>
-                    )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="raw" className="p-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">抽出テキスト</h3>
-                    <div className="bg-black rounded-lg p-4">
-                      <pre className="text-sm text-gray-300 overflow-auto whitespace-pre-wrap break-words">
+                    <h3 className="text-lg font-semibold text-foreground">内容の説明</h3>
+                    <div className="bg-muted rounded-lg p-4 border border-border">
+                      <div className="text-sm text-foreground overflow-auto whitespace-pre-wrap break-words">
                         {ocrResult.error ? (
                           <span className="text-red-400">{ocrResult.error}</span>
                         ) : (
-                          ocrResult.extractedText
+                          // 構造化データがある場合は内容説明を表示、ない場合は元のテキストを表示
+                          ocrResult.structuredData ? (
+                            <div className="space-y-4">
+                              {/* 文書の内容説明 */}
+                              {ocrResult.structuredData.content_description && (
+                                <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
+                                  <h4 className="text-primary font-medium mb-2">文書の内容</h4>
+                                  <p className="text-foreground">
+                                    {ocrResult.structuredData.content_description}
+                                  </p>
+                                </div>
+                              )}
+                              
+                              {/* 主要な情報の表示 */}
+                              {ocrResult.structuredData.extracted_data && (
+                                <div className="space-y-2">
+                                  <h4 className="text-foreground font-medium">主要な情報:</h4>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {ocrResult.structuredData.extracted_data.name && (
+                                      <div className="bg-secondary rounded p-2">
+                                        <span className="text-muted-foreground text-sm">氏名:</span>
+                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.name}</span>
+                                      </div>
+                                    )}
+                                    {ocrResult.structuredData.extracted_data.license_number && (
+                                      <div className="bg-secondary rounded p-2">
+                                        <span className="text-muted-foreground text-sm">免許証番号:</span>
+                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.license_number}</span>
+                                      </div>
+                                    )}
+                                    {ocrResult.structuredData.extracted_data.date_of_birth && (
+                                      <div className="bg-secondary rounded p-2">
+                                        <span className="text-muted-foreground text-sm">生年月日:</span>
+                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.date_of_birth}</span>
+                                      </div>
+                                    )}
+                                    {ocrResult.structuredData.extracted_data.expiration_date && (
+                                      <div className="bg-secondary rounded p-2">
+                                        <span className="text-muted-foreground text-sm">有効期限:</span>
+                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.expiration_date}</span>
+                                      </div>
+                                    )}
+                                    {ocrResult.structuredData.extracted_data.address && (
+                                      <div className="bg-secondary rounded p-2 md:col-span-2">
+                                        <span className="text-muted-foreground text-sm">住所:</span>
+                                        <span className="text-foreground ml-2">{ocrResult.structuredData.extracted_data.address}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* 処理に関する注意事項 */}
+                              {ocrResult.structuredData.processing_notes && (
+                                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                                  <p className="text-yellow-600 dark:text-yellow-400 text-sm">
+                                    <strong>注意事項:</strong> {ocrResult.structuredData.processing_notes}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            ocrResult.extractedText
+                          )
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="json" className="p-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground">JSON形式の出力</h3>
+                    <div className="bg-muted rounded-lg p-4 border border-border">
+                      <pre className="text-sm text-foreground overflow-auto whitespace-pre-wrap break-words">
+                        {ocrResult.error ? (
+                          <span className="text-red-400">{ocrResult.error}</span>
+                        ) : ocrResult.structuredData ? (
+                          JSON.stringify(ocrResult.structuredData, null, 2)
+                        ) : (
+                          <span className="text-yellow-600 dark:text-yellow-400">
+                            構造化されたJSONデータは利用できません。
+                            {'\n\n'}元のテキスト出力:
+                            {'\n'}{ocrResult.extractedText}
+                          </span>
                         )}
                       </pre>
                     </div>
+                    {ocrResult.structuredData && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(JSON.stringify(ocrResult.structuredData, null, 2))
+                          }}
+                        >
+                          JSONをコピー
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </TabsContent>
 
                 <TabsContent value="metadata" className="p-6">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">画像メタデータ</h3>
+                    <h3 className="text-lg font-semibold text-foreground">処理詳細</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {ocrResult.imageInfo && (
-                        <>
-                          <div className="bg-black rounded-lg p-4">
-                            <h4 className="text-white font-medium mb-2">画像サイズ</h4>
-                            <p className="text-gray-300">
-                              {ocrResult.imageInfo.width} × {ocrResult.imageInfo.height} px
-                            </p>
+                      <div className="bg-card rounded-lg p-4 border border-border">
+                        <h4 className="text-foreground font-medium mb-2">認識情報</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">文書種別</span>
+                            <Badge className="bg-primary text-primary-foreground">
+                              {ocrResult.documentType || '不明'}
+                            </Badge>
                           </div>
-                          <div className="bg-black rounded-lg p-4">
-                            <h4 className="text-white font-medium mb-2">回転角度</h4>
-                            <p className="text-gray-300">{ocrResult.imageInfo.rotation || 0}°</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">信頼度</span>
+                            <span className="text-foreground font-medium">
+                              {ocrResult.confidence ? `${Math.round(ocrResult.confidence * 100)}%` : 'N/A'}
+                            </span>
                           </div>
-                          <div className="bg-black rounded-lg p-4">
-                            <h4 className="text-white font-medium mb-2">スキュー角度</h4>
-                            <p className="text-gray-300">{ocrResult.imageInfo.skew || 0}°</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">構造化データ</span>
+                            <span className="text-foreground font-medium">
+                              {ocrResult.structuredData ? '利用可能' : '利用不可'}
+                            </span>
                           </div>
-                        </>
-                      )}
+                        </div>
+                      </div>
+
+                      <div className="bg-card rounded-lg p-4 border border-border">
+                        <h4 className="text-foreground font-medium mb-2">パフォーマンス</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">処理時間</span>
+                            <span className="text-foreground font-medium">
+                              {ocrResult.processingTime ? `${(ocrResult.processingTime / 1000).toFixed(2)}秒` : 'N/A'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">APIバージョン</span>
+                            <span className="text-foreground font-medium">
+                              {ocrResult.apiVersion || 'v1.0'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </TabsContent>

@@ -7,14 +7,23 @@ export default function Footer() {
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="space-y-4">
           <Link className="flex items-center" href="/">
-            <Image
-              src="/images/icon.png" // Use the provided icon.png
-              alt="Doge Works Logo"
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
-            <span className="ml-2 text-2xl font-bold text-primary font-rubik-one">Doge Works</span> {/* フォントを適用 */}
+            <div className="relative w-10 h-10">
+              <Image
+                src="/images/icon 2.png"
+                alt="Doge Works Logo"
+                width={40}
+                height={40}
+                className="rounded-full dark:opacity-0 transition-opacity duration-200"
+              />
+              <Image
+                src="/images/icon 1.png"
+                alt="Doge Works Logo"
+                width={40}
+                height={40}
+                className="absolute inset-0 rounded-full opacity-0 dark:opacity-100 transition-opacity duration-200"
+              />
+            </div>
+            <span className="ml-2 text-2xl font-bold text-foreground font-rubik-one">Doge Works</span> {/* フォントを適用 */}
           </Link>
           <p className="text-sm text-muted-foreground">
             Doge Worksは、AI技術を活用したOCRサービス「Doge OCR API」と身分証明書検証サービス「Doge ID Verify API」を提供し、文書処理と本人確認業務を自動化します。

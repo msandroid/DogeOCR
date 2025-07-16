@@ -1,0 +1,218 @@
+"use server"
+
+import { 
+  GLOBAL_DOCUMENT_TYPES, 
+  COMPREHENSIVE_DOCUMENT_SCHEMAS, 
+  CommonFieldsSchema,
+  DocumentType 
+} from "@/lib/document-schemas"
+
+// 多言語対応の文書種類検出関数
+export async function detectDocumentType(extractedText: string): Promise<DocumentType | "不明"> {
+  const text = extractedText.toLowerCase()
+  
+  // 身分証明書の検出
+  if (text.includes("passport") || text.includes("パスポート") || text.includes("旅券")) return "パスポート"
+  if (text.includes("driver") && text.includes("license") || text.includes("運転免許") || text.includes("driving licence")) return "運転免許証"
+  if (text.includes("national id") || text.includes("identity card") || text.includes("身分証")) return "国民IDカード"
+  if (text.includes("residence card") || text.includes("在留カード")) return "在留カード"
+  if (text.includes("green card") || text.includes("permanent resident")) return "グリーンカード"
+  
+  // 金融文書の検出
+  if (text.includes("bank statement") || text.includes("口座明細") || text.includes("銀行明細")) return "銀行明細書"
+  if (text.includes("insurance policy") || text.includes("保険証券")) return "保険証券"
+  if (text.includes("credit card statement") || text.includes("クレジット明細")) return "クレジットカード明細"
+  
+  // 医療文書の検出
+  if (text.includes("medical certificate") || text.includes("診断書")) return "診断書"
+  if (text.includes("prescription") || text.includes("処方箋")) return "処方箋"
+  if (text.includes("health checkup") || text.includes("健康診断")) return "健康診断結果"
+  
+  // 教育文書の検出
+  if (text.includes("diploma") || text.includes("graduation") || text.includes("卒業証明")) return "卒業証明書"
+  if (text.includes("transcript") || text.includes("成績証明")) return "成績証明書"
+  if (text.includes("degree certificate") || text.includes("学位記")) return "学位記"
+  
+  // 法律文書の検出
+  if (text.includes("contract") || text.includes("agreement") || text.includes("契約書")) return "売買契約書"
+  if (text.includes("judgment") || text.includes("court order") || text.includes("判決")) return "判決文"
+  if (text.includes("will") || text.includes("遺言")) return "遺言書"
+  
+  // ビジネス文書の検出
+  if (text.includes("invoice") || text.includes("請求書")) return "請求書"
+  if (text.includes("receipt") || text.includes("領収書") || text.includes("レシート")) return "レシート/領収書"
+  if (text.includes("purchase order") || text.includes("注文書")) return "注文書"
+  if (text.includes("quotation") || text.includes("見積")) return "見積書"
+  if (text.includes("balance sheet") || text.includes("貸借対照表")) return "貸借対照表"
+  
+  // 技術文書の検出
+  if (text.includes("api documentation") || text.includes("api") && text.includes("documentation")) return "API文書"
+  if (text.includes("user manual") || text.includes("manual") || text.includes("マニュアル")) return "ユーザーマニュアル"
+  if (text.includes("technical specification") || text.includes("技術仕様")) return "技術仕様書"
+  
+  // 日本語特有文書（既存のロジックを保持）
+  if (text.includes("申込") || text.includes("申し込み")) return "申込書"
+  if (text.includes("報告")) return "研究報告書"
+  if (text.includes("アンケート") || text.includes("調査")) return "アンケート"
+  if (text.includes("納品")) return "納品書"
+  if (text.includes("勤怠") || text.includes("出勤") || text.includes("タイムカード")) return "勤怠管理表"
+  if (text.includes("点検") || text.includes("検査")) return "点検表"
+  if (text.includes("名刺") || (text.includes("会社") && text.includes("電話"))) return "名刺"
+  
+  return "不明"
+}
+
+// 国際対応の文書プロンプト生成関数
+export async function generateInternationalPrompt(documentType: DocumentType, language: string = "ja"): Promise<string> {
+  const schema = COMPREHENSIVE_DOCUMENT_SCHEMAS[documentType as keyof typeof COMPREHENSIVE_DOCUMENT_SCHEMAS]
+  
+  if (!schema) {
+    const prompts: Record<string, string> = {
+      ja: `この画像から${documentType}の文字を読み取り、以下の形式で厳密にJSON形式で出力してください`,
+      en: `Extract text from this ${documentType} image and output in strict JSON format as follows`,
+      es: `Extrae el texto de esta imagen de ${documentType} y genera la salida en formato JSON estricto como sigue`,
+      fr: `Extrayez le texte de cette image de ${documentType} et produisez au format JSON strict comme suit`,
+      de: `Extrahieren Sie Text aus diesem ${documentType}-Bild und geben Sie im strengen JSON-Format wie folgt aus`,
+      zh: `从这个${documentType}图像中提取文本，并按以下严格的JSON格式输出`
+    }
+    
+    return prompts[language] || prompts.ja
+  }
+
+  const fields = schema.shape
+  const fieldDescriptions = Object.entries(fields).map(([key, field]) => {
+    const description = (field as any)._def?.description || key
+    return `    "${key}": "${description}"`
+  }).join(",\n")
+
+  const prompts: Record<string, string> = {
+    ja: `この画像から${documentType}の文字を読み取り、以下の形式で厳密にJSON形式で出力してください：
+
+{
+  "document_type": "${documentType}",
+  "content_description": "この文書の内容を日本語で簡潔に説明してください",
+  "extracted_data": {
+${fieldDescriptions}
+  },
+  "confidence": 0.95,
+  "processing_notes": "処理に関する注意事項や特記事項"
+}
+
+必ず有効なJSON形式で出力してください。値が不明な場合は null を使用してください。`,
+
+    en: `Extract text from this ${documentType} image and output in strict JSON format as follows:
+
+{
+  "document_type": "${documentType}",
+  "content_description": "Briefly describe the content of this document in English",
+  "extracted_data": {
+${fieldDescriptions}
+  },
+  "confidence": 0.95,
+  "processing_notes": "Notes and special considerations for processing"
+}
+
+Must output in valid JSON format. Use null for unknown values.`
+  }
+
+  return prompts[language] || prompts.ja
+}
+
+// 文書カテゴリ取得関数（拡張版）
+export async function getDocumentCategory(documentType: DocumentType): Promise<string> {
+  const allTypes = GLOBAL_DOCUMENT_TYPES
+  
+  // 各カテゴリを検索
+  for (const [mainCategory, subCategories] of Object.entries(allTypes)) {
+    for (const [subCategory, types] of Object.entries(subCategories)) {
+      if (Object.values(types).includes(documentType as any)) {
+        return `${mainCategory}.${subCategory}`
+      }
+    }
+  }
+  
+  return "UNKNOWN"
+}
+
+// 全文書タイプ取得関数（拡張版）
+export async function getAllDocumentTypes(): Promise<DocumentType[]> {
+  const allTypes: DocumentType[] = []
+  
+  const traverseTypes = (obj: any) => {
+    for (const value of Object.values(obj)) {
+      if (typeof value === "string") {
+        allTypes.push(value as DocumentType)
+      } else if (typeof value === "object") {
+        traverseTypes(value)
+      }
+    }
+  }
+  
+  traverseTypes(GLOBAL_DOCUMENT_TYPES)
+  return allTypes
+}
+
+// 文書スキーマ取得関数（拡張版）
+export async function getDocumentSchema(documentType: DocumentType) {
+  return COMPREHENSIVE_DOCUMENT_SCHEMAS[documentType as keyof typeof COMPREHENSIVE_DOCUMENT_SCHEMAS] || CommonFieldsSchema
+}
+
+// 地域別文書タイプ取得関数
+export async function getRegionalDocumentTypes(region: string): Promise<DocumentType[]> {
+  const allTypes = await getAllDocumentTypes()
+  const regionalMappings: Record<string, DocumentType[]> = {
+    "US": ["パスポート", "運転免許証", "社会保障カード", "グリーンカード"],
+    "EU": ["パスポート", "運転免許証", "国民IDカード", "在留カード"],
+    "JP": ["パスポート", "運転免許証", "マイナンバーカード", "健康保険証", "在留カード"],
+    "IN": ["パスポート", "運転免許証", "Aadhaarカード", "選挙人登録証"],
+    "GLOBAL": allTypes
+  }
+  
+  return regionalMappings[region] || regionalMappings["GLOBAL"]
+}
+
+// 文書構造分析関数
+export async function analyzeDocumentStructure(extractedText: string): Promise<{
+  hasTable: boolean;
+  hasSignature: boolean;
+  hasPhoto: boolean;
+  hasBarcode: boolean;
+  language: string;
+  structure: string;
+}> {
+  const text = extractedText.toLowerCase()
+  
+  return {
+    hasTable: /\||\t|table|row|column|表|行|列/.test(text),
+    hasSignature: /signature|signed|署名|印|判|サイン/.test(text),
+    hasPhoto: /photo|picture|image|写真|顔写真/.test(text),
+    hasBarcode: /barcode|qr|code|バーコード|二次元コード/.test(text),
+    language: detectLanguage(text),
+    structure: detectStructure(text)
+  }
+}
+
+// 言語検出補助関数
+function detectLanguage(text: string): string {
+  if (/[ひらがなカタカナ漢字]/.test(text)) return "ja"
+  if (/[а-яё]/i.test(text)) return "ru"
+  if (/[αβγδεζηθικλμνξοπρστυφχψω]/i.test(text)) return "el"
+  if (/[äöüß]/i.test(text)) return "de"
+  if (/[àâäéèêëïîôùûüÿç]/i.test(text)) return "fr"
+  if (/[áéíñóúü]/i.test(text)) return "es"
+  if (/[一-龯]/.test(text)) return "zh"
+  if (/[가-힣]/.test(text)) return "ko"
+  if (/[ا-ي]/u.test(text)) return "ar"
+  return "en"
+}
+
+// 構造検出補助関数
+function detectStructure(text: string): string {
+  if (/table|row|column|表|行|列/.test(text)) return "table"
+  if (/form|申込|フォーム/.test(text)) return "form"
+  if (/certificate|証明|認証/.test(text)) return "certificate"
+  if (/contract|agreement|契約/.test(text)) return "contract"
+  if (/report|報告|レポート/.test(text)) return "report"
+  if (/invoice|bill|請求|領収/.test(text)) return "financial"
+  return "document"
+} 

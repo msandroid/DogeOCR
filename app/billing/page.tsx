@@ -40,11 +40,11 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">請求管理</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-foreground">請求管理</h1>
+          <p className="text-muted-foreground mt-2">
             従量課金制プランの使用量と請求情報を管理します
           </p>
         </div>
