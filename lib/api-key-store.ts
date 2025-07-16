@@ -10,7 +10,7 @@ function hashApiKey(apiKey: string): string {
 }
 
 export async function generateApiKey(userId: string, name: string): Promise<string> {
-  const apiKey = randomBytes(32).toString('hex')
+  const apiKey = 'dw_' + randomBytes(32).toString('hex')
   const hashedKey = hashApiKey(apiKey)
   const record = { key: hashedKey, userId, name, createdAt: Date.now(), revoked: false }
   let keys = []
