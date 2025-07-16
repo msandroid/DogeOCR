@@ -9,15 +9,43 @@ export default function PricingPage() {
       <div className="mx-auto max-w-4xl text-center mb-12">
         <h1 className="text-4xl font-bold text-foreground mb-4">料金プラン</h1>
         <p className="text-lg text-muted-foreground">
-          Doge Worksは、従量課金制でDoge OCR APIを提供しています。
-          最低月額$200からご利用いただけます。
+          DogeOCRは、Freeプラン（完全従量課金）から利用可能です。使った分だけ支払い、必要に応じて上位プランへアップグレードできます。
         </p>
       </div>
       
       {/* Pricing Options */}
       <div className="mb-16">
         <h2 className="text-2xl font-bold text-foreground mb-8 text-center">従量課金制プラン</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Free Plan */}
+          <Card className="flex flex-col border-2 border-green-500">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold text-foreground">Freeプラン</CardTitle>
+              <CardDescription className="text-muted-foreground">完全従量課金・使った分だけ支払い</CardDescription>
+              <div className="mt-4 text-4xl font-bold text-green-600">
+                $0 <span className="text-xl text-muted-foreground">/ 月</span>
+              </div>
+              <div className="text-sm text-muted-foreground mt-2">
+                <div>$0.005 / 1K 入力トークン</div>
+                <div>$0.005 / 1K 出力トークン</div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-green-500" />完全従量課金制</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-green-500" />使った分だけ支払い</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-green-500" />支出リミット設定可能</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-green-500" />基本OCR機能</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-green-500" />メールサポート</li>
+              </ul>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full bg-green-600 hover:bg-green-700 text-white" asChild>
+                <Link href="/auth/signin">無料で開始</Link>
+              </Button>
+            </CardFooter>
+          </Card>
+
           {/* Starter Plan */}
           <Card className="flex flex-col">
             <CardHeader className="text-center">
@@ -33,26 +61,11 @@ export default function PricingPage() {
             </CardHeader>
             <CardContent className="flex-1">
               <ul className="space-y-2 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  最低月額 $200
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  基本OCR機能
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  従量課金制
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  月間使用量レポート
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  メールサポート
-                </li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />最低月額 $200</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />基本OCR機能</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />従量課金制</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />月間使用量レポート</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />メールサポート</li>
               </ul>
             </CardContent>
             <CardFooter>
@@ -77,30 +90,12 @@ export default function PricingPage() {
             </CardHeader>
             <CardContent className="flex-1">
               <ul className="space-y-2 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  最低月額 $500
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  高精度OCR機能
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  優遇料金レート
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  API利用可能
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  優先サポート
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  カスタムテンプレート対応
-                </li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />最低月額 $500</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />高精度OCR機能</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />優遇料金レート</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />API利用可能</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />優先サポート</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />カスタムテンプレート対応</li>
               </ul>
             </CardContent>
             <CardFooter>
@@ -125,34 +120,13 @@ export default function PricingPage() {
             </CardHeader>
             <CardContent className="flex-1">
               <ul className="space-y-2 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  最低月額 $1,000
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  最高精度OCR機能
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  最優遇料金レート
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  専用サポート
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  SLA保証
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  カスタムAIモデル
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="h-5 w-5 text-primary" />
-                  オンプレミス対応
-                </li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />最低月額 $1,000</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />最高精度OCR機能</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />最優遇料金レート</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />専用サポート</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />SLA保証</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />カスタムAIモデル</li>
+                <li className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" />オンプレミス対応</li>
               </ul>
             </CardContent>
             <CardFooter>
