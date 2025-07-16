@@ -57,21 +57,8 @@ export async function handleImageUpload(
   const imagePreview = `data:${file.type};base64,${buffer.toString("base64")}`
 
   // プロンプト
-  let promptText = `この画像から文字を読み取り、以下の形式で厳密にRFC 8259に準拠したJSONデータで出力してください：
-{
-  "content_description": "この文書の内容を説明してください",
-  "extracted_data": {
-    "key1": "value1",
-    "key2": "value2",
-    "key3": "value3",
-  },
-  "document_type": "文書の種類（例：運転免許証、パスポート、身分証明書、マイナンバーカード、請求書、領収書、など）",
-  "confidence": 0.95,
-  "processing_time": 1000,
-  "api_version": "v1.0",
-}
-必ず有効なJSON形式で出力してください。値が不明な場合は null を使用してください。`
-  
+  let promptText = `この画像に写っている内容を日本語で簡潔に説明し（content_description）、主要な情報をextracted_dataとしてRFC 8259に準拠した有効なJSONデータで出力してください。例：\n\n{\n  \"content_description\": \"この画像は...\",\n  \"extracted_data\": { ... }\n}\n\n必ずcontent_descriptionとextracted_dataを含めてください。値が不明な場合はnullを使い、全体を有効なJSONとして出力してください。`
+
   // チャット欄の入力があれば追加プロンプトとして使用
   if (userPrompt && userPrompt.trim().length > 0) {
     promptText = userPrompt.trim()
@@ -79,13 +66,13 @@ export async function handleImageUpload(
 
   // 公式APIの仕様に合わせたリクエストボディ
   const requestBody = {
-    model: "accounts/fireworks/models/firesearch-ocr-v6",
+    model: "accounts/fireworks/models/llama4-maverick-instruct-basic",
     max_tokens: 1024,
     top_p: 1,
     top_k: 40,
     presence_penalty: 0,
     frequency_penalty: 0,
-    temperature: 0.34,
+    temperature: 0.60,
     messages: [
       {
         role: "user",
