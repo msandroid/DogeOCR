@@ -317,7 +317,7 @@ else:
               <CardContent>
                 <ul className="space-y-2 text-sm">
                   <li>• 画像ファイルサイズ: 最大10MB</li>
-                  <li>• 対応形式: JPEG, PNG, GIF, WEBP, HEIC</li>
+                  <li>• 対応形式: JPEG, JPG, PNG, GIF, WEBP, HEIC</li>
                   <li>• Base64エンコードが必要</li>
                   <li>• 処理時間: 通常1-5秒</li>
                   <li>• レート制限: 実装予定</li>

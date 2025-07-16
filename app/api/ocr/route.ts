@@ -26,14 +26,28 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
   
   try {
-    // APIキーの確認
-    const fireworksApiKey = process.env.FIREWORKS_API_KEY
-    if (!fireworksApiKey) {
+    // APIキー認証
+    const authHeader = request.headers.get('authorization')
+    let apiKeyHeader = null
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      apiKeyHeader = authHeader.slice(7)
+    }
+    if (!apiKeyHeader) {
       return NextResponse.json({
         success: false,
-        error: "APIキーが設定されていません。環境変数 FIREWORKS_API_KEY を確認してください。",
-      }, { status: 500 })
+        error: "APIキーが必要です。'Authorization: Bearer <API_KEY>' ヘッダーを指定してください。",
+      }, { status: 401 })
     }
+    // SupabaseでAPIキー情報取得
+    const { getApiKeyInfoFromSupabase } = await import('../../../lib/api-key-store')
+    const apiKeyInfo = await getApiKeyInfoFromSupabase(apiKeyHeader)
+    if (!apiKeyInfo) {
+      return NextResponse.json({
+        success: false,
+        error: "APIキーが無効です。",
+      }, { status: 401 })
+    }
+    const isDeveloper = apiKeyInfo.role === 'developer'
 
     // リクエストボディの解析
     const body = await request.json()
@@ -115,7 +129,7 @@ export async function POST(request: NextRequest) {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: `Bearer ${fireworksApiKey}`,
+        Authorization: `Bearer ${apiKeyHeader}`, // Fireworks APIはBearerトークンを使用
       },
       body: JSON.stringify(requestBody),
     })
@@ -198,13 +212,13 @@ export async function GET() {
   return NextResponse.json({
     name: "Doge OCR API",
     version: "v1.0",
-    description: "画像からテキストを抽出するOCR API",
+    description: "画像からテキストを抽出するOCR API（画像は4MB以下で送信してください）",
     endpoints: {
       "/api/ocr": {
         method: "POST",
-        description: "画像をOCR処理してテキストを抽出",
+        description: "画像をOCR処理してテキストを抽出（画像は4MB以下で送信してください）",
         requestBody: {
-          image: "Base64エンコードされた画像データ（data:image/... 形式）",
+          image: "Base64エンコードされた画像データ（data:image/... 形式、4MB以下）",
           prompt: "カスタムプロンプト（オプション）",
           mimeType: "画像のMIMEタイプ（オプション）"
         },
@@ -224,12 +238,7 @@ export async function GET() {
     },
     usage: {
       example: {
-        curl: `curl -X POST https://your-domain.com/api/ocr \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...",
-    "prompt": "この画像から名前と住所を抽出してください"
-  }'`
+        curl: `curl -X POST https://your-domain.com/api/ocr \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...（4MB以下）",\n    "prompt": "この画像から名前と住所を抽出してください"\n  }'`
       }
     }
   })

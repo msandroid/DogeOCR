@@ -7,9 +7,92 @@ import { useTheme } from "next-themes"
 import { Badge } from "@/components/ui/badge"
 import { Sun, Moon, Monitor, Settings } from "lucide-react"
 import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { useSession } from "next-auth/react"
+import { useState } from "react"
+import { toast } from "sonner"
+import React from "react"
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 export default function SettingsPage() {
   const { theme, setTheme, systemTheme } = useTheme()
+  const { data: session } = useSession()
+  const [apiKeys, setApiKeys] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(false)
+  const [showDialog, setShowDialog] = useState(false)
+  const [newKeyName, setNewKeyName] = useState("")
+  const [issuedKey, setIssuedKey] = useState<string|null>(null)
+
+  const userId = session?.user?.id
+
+  // APIキー一覧取得
+  const fetchApiKeys = async () => {
+    if (!userId) return
+    setFetching(true)
+    try {
+      const res = await fetch("/api/auth/api-key", {
+        headers: { "x-user-id": userId },
+      })
+      const data = await res.json()
+      setApiKeys(data.apiKeys || [])
+    } finally {
+      setFetching(false)
+    }
+  }
+
+  // 新規APIキー発行
+  const handleCreate = async () => {
+    if (!userId || !newKeyName) return
+    setLoading(true)
+    try {
+      const res = await fetch("/api/auth/api-key", {
+        method: "POST",
+        headers: { "x-user-id": userId, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newKeyName }),
+      })
+      const data = await res.json()
+      if (data.apiKey) {
+        toast.success("APIキーを発行しました")
+        setIssuedKey(data.apiKey)
+        fetchApiKeys()
+        setShowDialog(false)
+        setNewKeyName("")
+      } else {
+        toast.error(data.error || "APIキー発行に失敗")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // APIキー削除
+  const handleDelete = async (key: string) => {
+    if (!userId) return
+    setLoading(true)
+    try {
+      const res = await fetch("/api/auth/api-key", {
+        method: "DELETE",
+        headers: { "x-user-id": userId, "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: key }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success("APIキーを削除しました")
+        fetchApiKeys()
+      } else {
+        toast.error(data.error || "削除に失敗")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 初回マウント時にAPIキー一覧取得
+  React.useEffect(() => {
+    if (userId) fetchApiKeys()
+  }, [userId])
 
   const currentTheme = theme === "system" ? systemTheme : theme
 
@@ -161,6 +244,9 @@ export default function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* APIキー管理 */}
+          {/* このCard全体を削除 */}
 
           {/* その他の設定 (将来の拡張用) */}
           <Card>

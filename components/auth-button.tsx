@@ -11,9 +11,13 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
+import SettingsPage from "@/app/settings/page"
+import { useState } from "react"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 export default function AuthButton() {
   const { data: session, status } = useSession()
+  const [open, setOpen] = useState(false)
 
   if (status === "loading") {
     return <Button variant="outline" disabled>読み込み中...</Button>
@@ -21,46 +25,56 @@ export default function AuthButton() {
 
   if (session?.user) {
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <Avatar>
-              <AvatarImage src={session.user.image || ""} alt={session.user.name || ""} />
-              <AvatarFallback>
-                {session.user.name?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
-          <div className="flex items-center justify-start gap-2 p-2">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{session.user.name}</p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {session.user.email}
-              </p>
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Avatar>
+                <AvatarImage src={session.user.image || ""} alt={session.user.name || ""} />
+                <AvatarFallback>
+                  {session.user.name?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <div className="flex items-center justify-start gap-2 p-2">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{session.user.name}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {session.user.email}
+                </p>
+              </div>
             </div>
-          </div>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/dashboard">
-              ダッシュボード
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/billing">
-              請求管理
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onSelect={() => signOut({ callbackUrl: "/" })}
-          >
-            サインアウト
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/dashboard">
+                ダッシュボード
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/billing">
+                請求管理
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onSelect={() => setOpen(true)}>
+              設定
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onSelect={() => signOut({ callbackUrl: "/" })}
+            >
+              サインアウト
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-2xl p-0 overflow-y-auto max-h-[90vh]">
+            <SettingsPage />
+          </DialogContent>
+        </Dialog>
+      </>
     )
   }
 
