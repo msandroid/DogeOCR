@@ -112,7 +112,7 @@ export default function PricingCard({ planType, isPopular = false }: PricingCard
           onClick={handleSubscribe}
           disabled={loading}
           className="w-full"
-          variant={isPopular ? "default" : "outline"}
+          variant={isPopular ? "default" : "outDoge"}
         >
           {loading ? (
             <>

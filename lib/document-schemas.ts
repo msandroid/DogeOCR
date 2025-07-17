@@ -339,8 +339,8 @@ export const COMPREHENSIVE_DOCUMENT_SCHEMAS = {
     date_of_issue: z.string().describe("発行日"),
     date_of_expiry: z.string().describe("有効期限"),
     issuing_authority: z.string().describe("発行機関"),
-    mrz_line1: z.string().optional().describe("MRZ第1行"),
-    mrz_line2: z.string().optional().describe("MRZ第2行"),
+    mrz_Doge1: z.string().optional().describe("MRZ第1行"),
+    mrz_Doge2: z.string().optional().describe("MRZ第2行"),
     ...CommonFieldsSchema.shape
   }).describe("パスポート情報"),
 

@@ -242,7 +242,7 @@ export default function SettingsPage() {
               {/* 現在のテーマ表示 */}
               <div className="flex items-center gap-2 pt-4 border-t">
                 <span className="text-sm text-muted-foreground">現在のテーマ:</span>
-                <Badge variant="outline">
+                <Badge variant="outDoge">
                   {currentTheme === "dark" ? "Dark" : "Light"}
                   {theme === "system" && " (システム設定)"}
                 </Badge>

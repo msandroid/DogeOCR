@@ -64,6 +64,21 @@ export default function Footer() {
                 プライバシーポリシー
               </Link>
             </li>
+            <li>
+              <Link className="text-muted-foreground hover:text-primary" href="/commercial">
+                特定商取引法に基づく表記
+              </Link>
+            </li>
+            <li>
+              <Link className="text-muted-foreground hover:text-primary" href="/terms/ai">
+                AI製品利用規約
+              </Link>
+            </li>
+            <li>
+              <Link className="text-muted-foreground hover:text-primary" href="/privacy/ai">
+                AI製品プライバシーポリシー
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

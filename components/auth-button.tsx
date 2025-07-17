@@ -20,7 +20,7 @@ export default function AuthButton() {
   const [open, setOpen] = useState(false)
 
   if (status === "loading") {
-    return <Button variant="outline" disabled>読み込み中...</Button>
+    return <Button variant="outDoge" disabled>読み込み中...</Button>
   }
 
   if (session?.user) {
@@ -79,7 +79,7 @@ export default function AuthButton() {
   }
 
   return (
-    <Button onClick={() => signIn("google", { callbackUrl: "/" })} variant="outline">
+    <Button onClick={() => signIn("google", { callbackUrl: "/" })} variant="outDoge">
       サインイン
     </Button>
   )

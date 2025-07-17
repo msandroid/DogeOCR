@@ -118,7 +118,7 @@ export default function BillingPage() {
                 <Button asChild>
                   <Link href="/pricing/new">プランをアップグレード</Link>
                 </Button>
-                <Button variant="outline">
+                <Button variant="outDoge">
                   <Settings className="h-4 w-4 mr-2" />
                   設定を変更
                 </Button>
@@ -132,19 +132,19 @@ export default function BillingPage() {
               <CardTitle>クイックアクション</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outDoge" className="w-full justify-start">
                 <Download className="h-4 w-4 mr-2" />
                 請求書をダウンロード
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outDoge" className="w-full justify-start">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 使用量レポート
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outDoge" className="w-full justify-start">
                 <Calendar className="h-4 w-4 mr-2" />
                 使用履歴を確認
               </Button>
-              <Button variant="outline" className="w-full justify-start">
+              <Button variant="outDoge" className="w-full justify-start">
                 <CreditCard className="h-4 w-4 mr-2" />
                 支払い方法を変更
               </Button>
@@ -225,7 +225,7 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <div className="flex gap-4">
-              <Button variant="outline">
+              <Button variant="outDoge">
                 お問い合わせ
               </Button>
             </div>

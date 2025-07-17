@@ -88,7 +88,7 @@ export default function ProductsPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button variant="outline" asChild className="flex-1">
+              <Button variant="outDoge" asChild className="flex-1">
                 <Link href="/demo">デモを試す</Link>
               </Button>
             </div>
@@ -157,7 +157,7 @@ export default function ProductsPage() {
               <Button asChild className="flex-1 bg-blue-600 hover:bg-blue-700">
                 <Link href="/docs">ドキュメント</Link>
               </Button>
-              <Button variant="outline" asChild className="flex-1">
+              <Button variant="outDoge" asChild className="flex-1">
                 <Link href="/contact">お問い合わせ</Link>
               </Button>
             </div>

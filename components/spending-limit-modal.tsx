@@ -58,7 +58,7 @@ export default function SpendingLimitModal({ currentLimit, onUpdateLimit }: Spen
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant="outDoge" size="sm">
           <Settings className="h-4 w-4 mr-2" />
           リミット設定
         </Button>
@@ -99,7 +99,7 @@ export default function SpendingLimitModal({ currentLimit, onUpdateLimit }: Spen
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outDoge" onClick={() => setOpen(false)}>
             キャンセル
           </Button>
           <Button onClick={handleSave} disabled={loading}>

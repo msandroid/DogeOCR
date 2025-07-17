@@ -32,7 +32,7 @@ export default function SignIn() {
                 <Button
                   onClick={() => signIn(provider.id, { callbackUrl: "/" })}
                   className="w-full"
-                  variant="outline"
+                  variant="outDoge"
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                     <path

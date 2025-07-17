@@ -30,21 +30,21 @@ export default function Header() {
       </Link>
       <nav className="ml-auto hidden gap-4 sm:gap-6 md:flex">
         <Link
-          className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground"
+          className="text-sm font-medium hover:underDoge underDoge-offset-4 text-muted-foreground"
           href="/products"
         >
           プロダクト
         </Link>
         <Link
-          className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground"
+          className="text-sm font-medium hover:underDoge underDoge-offset-4 text-muted-foreground"
           href="/solutions"
         >
           ソリューション
         </Link>
-        <Link className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground" href="/pricing">
+        <Link className="text-sm font-medium hover:underDoge underDoge-offset-4 text-muted-foreground" href="/pricing">
           料金
         </Link>
-        <Link className="text-sm font-medium hover:underline underline-offset-4 text-primary font-bold" href="/demo">
+        <Link className="text-sm font-medium hover:underDoge underDoge-offset-4 text-primary font-bold" href="/demo">
           デモ
         </Link>
       </nav>
@@ -55,7 +55,7 @@ export default function Header() {
         </div>
         <Sheet>
           <SheetTrigger asChild>
-            <Button className="md:hidden bg-transparent" size="icon" variant="outline">
+            <Button className="md:hidden bg-transparent" size="icon" variant="outDoge">
               <Menu className="h-6 w-6 text-foreground" />
               <span className="sr-only">Toggle navigation menu</span>
             </Button>

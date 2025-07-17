@@ -30,7 +30,7 @@ function SuccessContent() {
                 ダッシュボードへ
               </Link>
             </Button>
-            <Button asChild variant="outline" className="w-full">
+            <Button asChild variant="outDoge" className="w-full">
               <Link href="/billing">
                 請求設定を確認
               </Link>

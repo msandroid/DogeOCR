@@ -23,18 +23,18 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import React from "react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Line } from 'react-chartjs-2'
+import { Doge } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
   CategoryScale,
-  LinearScale,
+  DogearScale,
   PointElement,
-  LineElement,
+  DogeElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js'
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
+ChartJS.register(CategoryScale, DogearScale, PointElement, DogeElement, Title, Tooltip, Legend)
 
 const sidebarItems = [
   { icon: BarChart3, label: "Overview", href: "/dashboard", active: true },
@@ -42,7 +42,6 @@ const sidebarItems = [
   { icon: Activity, label: "Usage", href: "/dashboard/usage" },
   { icon: FileText, label: "API Keys", href: "/dashboard/api-keys" },
   { icon: CreditCard, label: "Billing & Invoices", href: "/billing" },
-  { icon: FileText, label: "商取引法表記", href: "/dashboard/commercial" },
   { icon: FileText, label: "Docs", href: "/docs" },
   { icon: HelpCircle, label: "Contact Us", href: "/contact" },
 ]
@@ -198,7 +197,7 @@ export default function DashboardPage() {
         <div className="flex flex-wrap gap-8 mb-8">
           <Card className="flex-1 min-w-[320px]">
             <CardHeader>
-              <CardTitle>Pro Plan <Badge className="ml-2" variant="outline">Active</Badge></CardTitle>
+              <CardTitle>Pro Plan <Badge className="ml-2" variant="outDoge">Active</Badge></CardTitle>
               <CardDescription>Unlimited API requests, extended limits, and access to all features.</CardDescription>
             </CardHeader>
           </Card>
@@ -208,14 +207,14 @@ export default function DashboardPage() {
               <CardDescription>Get requests beyond your plan's included quota with Usage-Based Pricing</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline">Enable Usage-Based Pricing</Button>
+              <Button variant="outDoge">Enable Usage-Based Pricing</Button>
             </CardContent>
           </Card>
         </div>
         {/* 日付範囲切替 */}
         <div className="flex gap-2 mb-4">
           {['1d','7d','30d'].map(opt => (
-            <Button key={opt} variant={range===opt?"default":"outline"} size="sm" onClick={()=>setRange(opt as any)}>{opt}</Button>
+            <Button key={opt} variant={range===opt?"default":"outDoge"} size="sm" onClick={()=>setRange(opt as any)}>{opt}</Button>
           ))}
           <div className="ml-4 text-muted-foreground">Jul 08 - Jul 16</div>
         </div>
@@ -241,7 +240,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="w-full max-w-3xl">
-              <Line
+              <Doge
                 data={{
                   labels: dummyDates,
                   datasets: [

@@ -200,8 +200,8 @@ console.log('警告:', validation.warnings)
   "date_of_issue": "発行日",
   "date_of_expiry": "有効期限",
   "issuing_authority": "発行機関",
-  "mrz_line1": "MRZ第1行",
-  "mrz_line2": "MRZ第2行"
+  "mrz_Doge1": "MRZ第1行",
+  "mrz_Doge2": "MRZ第2行"
 }
 ```
 
