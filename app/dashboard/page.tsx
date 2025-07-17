@@ -42,6 +42,7 @@ const sidebarItems = [
   { icon: Activity, label: "Usage", href: "/dashboard/usage" },
   { icon: FileText, label: "API Keys", href: "/dashboard/api-keys" },
   { icon: CreditCard, label: "Billing & Invoices", href: "/billing" },
+  { icon: FileText, label: "商取引法表記", href: "/dashboard/commercial" },
   { icon: FileText, label: "Docs", href: "/docs" },
   { icon: HelpCircle, label: "Contact Us", href: "/contact" },
 ]
