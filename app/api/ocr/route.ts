@@ -27,27 +27,35 @@ export async function POST(request: NextRequest) {
   
   try {
     // APIキー認証
-    const authHeader = request.headers.get('authorization')
     let apiKeyHeader = null
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    let isDeveloper = false
+    let apiKeyInfo = null
+    // 開発用(dev_)のみクライアントからAuthorizationヘッダーを受け付ける
+    const authHeader = request.headers.get('authorization')
+    if (authHeader && authHeader.startsWith('Bearer dev_')) {
       apiKeyHeader = authHeader.slice(7)
+      const { isValidDevApiKey } = await import('../../../lib/api-key-store')
+      const valid = await isValidDevApiKey(apiKeyHeader)
+      if (!valid) {
+        return NextResponse.json({
+          success: false,
+          error: "APIキーが無効です。",
+        }, { status: 401 })
+      }
+      apiKeyInfo = { userId: 'dev_local', role: 'developer', devOnly: true, host: require('os').hostname() }
+      isDeveloper = true
+    } else {
+      // 本番用はサーバー側でAPIキーを.envから取得
+      apiKeyHeader = process.env.FIREWORKS_API_KEY
+      if (!apiKeyHeader) {
+        return NextResponse.json({
+          success: false,
+          error: "サーバー側のAPIキーが設定されていません。管理者に連絡してください。",
+        }, { status: 500 })
+      }
+      // 本番用はSupabase認証不要（必要ならここで追加）
+      apiKeyInfo = { userId: 'prod_server', role: 'user', devOnly: false }
     }
-    if (!apiKeyHeader) {
-      return NextResponse.json({
-        success: false,
-        error: "APIキーが必要です。'Authorization: Bearer <API_KEY>' ヘッダーを指定してください。",
-      }, { status: 401 })
-    }
-    // SupabaseでAPIキー情報取得
-    const { getApiKeyInfoFromSupabase } = await import('../../../lib/api-key-store')
-    const apiKeyInfo = await getApiKeyInfoFromSupabase(apiKeyHeader)
-    if (!apiKeyInfo) {
-      return NextResponse.json({
-        success: false,
-        error: "APIキーが無効です。",
-      }, { status: 401 })
-    }
-    const isDeveloper = apiKeyInfo.role === 'developer'
 
     // リクエストボディの解析
     const body = await request.json()
@@ -71,40 +79,39 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // プロンプトの設定
-    let promptText = prompt || `この画像から文字を読み取り、以下の形式で厳密にJSON形式で出力してください：
+    // 画像サイズ（4MB）検証
+    // data:image/xxx;base64,xxxx... の形式なのでカンマ以降がBase64本体
+    const base64Data = image.split(',')[1]
+    if (!base64Data) {
+      return NextResponse.json({
+        success: false,
+        error: "Base64画像データが不正です。",
+      }, { status: 400 })
+    }
+    // Base64 -> バイト数計算
+    const byteLength = Math.floor(base64Data.length * 3 / 4) - (base64Data.endsWith('==') ? 2 : base64Data.endsWith('=') ? 1 : 0)
+    if (byteLength > 4 * 1024 * 1024) {
+      return NextResponse.json({
+        success: false,
+        error: "画像サイズは4MB以下にしてください。",
+      }, { status: 400 })
+    }
 
-{
-  "document_type": "文書の種類（例：運転免許証、パスポート、身分証明書など）",
-  "content_description": "この文書の内容を日本語で簡潔に説明してください",
-  "extracted_data": {
-    "FN": "名前",
-    "LN": "姓",
-    "license_number": "免許証番号",
-    "address": "住所",
-    "date_of_birth": "生年月日",
-    "SEX": "性別",
-    "issue_date": "発行日",
-    "expiration_date": "有効期限",
-    "class": "免許の種類",
-    "restrictions": "制限事項",
-    "state": "発行州",
-    "country": "国"
-  },
-  "confidence": 0.95,
-}
+    // プロンプト（demo.tsと同じ仕様に統一）
+    let promptText = `この画像に写っている内容を日本語で簡潔に説明し（content_description）、主要な情報をextracted_dataとしてRFC 8259に準拠した有効なJSONデータで出力してください。例：\n\n{\n  \"content_description\": \"この画像は...\",\n  \"extracted_data\": { ... }\n}\n\n必ずcontent_descriptionとextracted_dataを含めてください。値が不明な場合はnullを使い、全体を有効なJSONとして出力してください。`
+    if (prompt && prompt.trim().length > 0) {
+      promptText = prompt.trim()
+    }
 
-必ず有効なJSON形式で出力してください。値が不明な場合は null を使用してください。`
-
-    // Fireworks APIへのリクエスト
+    // Fireworks APIリクエスト（demo.tsと同じモデル・パラメータに統一）
     const requestBody = {
-      model: "accounts/fireworks/models/firesearch-ocr-v6",
+      model: "accounts/fireworks/models/llama4-maverick-instruct-basic",
       max_tokens: 1024,
       top_p: 1,
       top_k: 40,
       presence_penalty: 0,
       frequency_penalty: 0,
-      temperature: 0.6,
+      temperature: 0.60,
       messages: [
         {
           role: "user",
@@ -124,77 +131,81 @@ export async function POST(request: NextRequest) {
       ],
     }
 
-    const response = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKeyHeader}`, // Fireworks APIはBearerトークンを使用
-      },
-      body: JSON.stringify(requestBody),
-    })
+    let ocrResult = null
+    try {
+      const response = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKeyHeader}`,
+        },
+        body: JSON.stringify(requestBody),
+      })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => response.text())
-      return NextResponse.json({
-        success: false,
-        error: `APIリクエストが失敗しました: ${response.status} ${response.statusText}`,
-        details: errorData,
-      }, { status: response.status })
-    }
-
-    const data = await response.json()
-    const rawContent = data.choices?.[0]?.message?.content
-    const processingTime = Date.now() - startTime
-
-    if (typeof rawContent === "string") {
-      // JSONレスポンスを解析
-      let parsedJson = null
-      try {
-        const jsonMatch = rawContent.match(/```json\s*([\s\S]*?)\s*```/) || 
-                         rawContent.match(/```\s*([\s\S]*?)\s*```/) ||
-                         [null, rawContent]
-        
-        if (jsonMatch && jsonMatch[1]) {
-          parsedJson = JSON.parse(jsonMatch[1].trim())
-        } else {
-          parsedJson = JSON.parse(rawContent.trim())
-        }
-      } catch (jsonError) {
-        parsedJson = null
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => response.text())
+        return NextResponse.json({
+          success: false,
+          error: `APIリクエストが失敗しました: ${response.status} ${response.statusText}`,
+          details: errorData,
+        }, { status: response.status })
       }
 
-      if (parsedJson) {
-        // 構造化されたJSONデータが得られた場合
-        return NextResponse.json({
-          success: true,
-          data: {
+      const data = await response.json()
+      const rawContent = data.choices?.[0]?.message?.content
+      const processingTime = Date.now() - startTime
+
+      if (typeof rawContent === "string") {
+        // JSONレスポンスを解析しようとする
+        let parsedJson = null
+        try {
+          // JSONブロックを抽出（```json ... ``` の形式に対応）
+          const jsonMatch = rawContent.match(/```json\s*([\s\S]*?)\s*```/) || 
+                           rawContent.match(/```\s*([\s\S]*?)\s*```/) ||
+                           [null, rawContent]
+          if (jsonMatch && jsonMatch[1]) {
+            parsedJson = JSON.parse(jsonMatch[1].trim())
+          } else {
+            parsedJson = JSON.parse(rawContent.trim())
+          }
+        } catch (jsonError) {
+          parsedJson = null
+        }
+
+        if (parsedJson) {
+          // 構造化されたJSONデータが得られた場合
+          ocrResult = {
             extractedText: JSON.stringify(parsedJson, null, 2),
             structuredData: parsedJson,
             documentType: parsedJson.document_type || "不明",
             processingTime,
             apiVersion: "v1.0",
             confidence: parsedJson.confidence || 0.85,
-          },
-        })
-      } else {
-        // JSON解析に失敗した場合は元のテキストを返す
-        return NextResponse.json({
-          success: true,
-          data: {
+          }
+        } else {
+          // JSON解析に失敗した場合は元のテキストを返す
+          ocrResult = {
             extractedText: rawContent,
             documentType: "不明",
             processingTime,
             apiVersion: "v1.0",
             confidence: 0.85,
-          },
-        })
+          }
+        }
+        return NextResponse.json({ success: true, data: ocrResult })
+      } else {
+        return NextResponse.json({
+          success: false,
+          error: "APIからの応答が期待された形式ではありません。",
+          details: data,
+        }, { status: 500 })
       }
-    } else {
+    } catch (error: any) {
       return NextResponse.json({
         success: false,
-        error: "APIからの応答が期待された形式ではありません。",
-        details: data,
+        error: `OCR処理中にエラーが発生しました: ${error.message}`,
+        processingTime: Date.now() - startTime,
       }, { status: 500 })
     }
 

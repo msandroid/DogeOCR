@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import Stripe from 'stripe'
+import { updateUserSubscription } from '@/lib/utils'
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
@@ -31,10 +32,11 @@ export async function POST(req: NextRequest) {
         console.log('Checkout session completed:', session.id)
         
         // ここでデータベースにサブスクリプション情報を保存
-        // const userId = session.metadata?.userId
-        // const planType = session.metadata?.planType
-        // await updateUserSubscription(userId, planType, session)
-        
+        const userId = session.metadata?.userId
+        const planType = session.metadata?.planType
+        if (userId && planType) {
+          await updateUserSubscription(userId, planType, session)
+        }
         break
       }
 

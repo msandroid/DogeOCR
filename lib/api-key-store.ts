@@ -1,5 +1,6 @@
 import { randomBytes, createHash } from 'crypto'
 import { supabase } from './utils'
+import os from 'os'
 
 // 簡易APIキー保存用（本番はDB推奨）
 const apiKeyFile = process.env.API_KEY_STORE_PATH || './api-keys.json'
@@ -82,6 +83,54 @@ export async function deleteApiKey(apiKey: string, isHashed = false): Promise<bo
     if (keys.length === before) return false
     await fs.writeFile(apiKeyFile, JSON.stringify(keys, null, 2))
     return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 開発者用APIキー（dev_）をこの端末のユーザー・ホスト名でしか生成できないようにする
+ * @param userId
+ * @param name
+ * @returns {Promise<string>} dev_で始まるAPIキー
+ * @throws {Error} 許可されていない場合は例外
+ */
+export async function generateDevApiKey(userId: string, name: string): Promise<string> {
+  // 許可するユーザー名・ホスト名をここで指定
+  const allowedUser = process.env.USER || process.env.LOGNAME
+  const allowedHost = os.hostname()
+  // 例: この端末のユーザー名・ホスト名のみ許可
+  if ((process.env.USER !== allowedUser && process.env.LOGNAME !== allowedUser) || os.hostname() !== allowedHost) {
+    throw new Error('この端末のユーザー・ホスト名以外では開発者用APIキーを生成できません')
+  }
+  const apiKey = 'dev_' + randomBytes(32).toString('hex')
+  const hashedKey = hashApiKey(apiKey)
+  const record = { key: hashedKey, userId, name, createdAt: Date.now(), revoked: false, devOnly: true, host: allowedHost }
+  let keys = []
+  try {
+    const raw = await fs.readFile(apiKeyFile, 'utf8')
+    keys = JSON.parse(raw)
+  } catch {}
+  keys.push(record)
+  await fs.writeFile(apiKeyFile, JSON.stringify(keys, null, 2))
+  return apiKey
+}
+
+/**
+ * dev_で始まる開発者用APIキーの認証
+ * - api-keys.jsonにハッシュ一致
+ * - devOnly: true
+ * - host一致
+ * - revoked: false
+ */
+export async function isValidDevApiKey(apiKey: string): Promise<boolean> {
+  if (!apiKey.startsWith('dev_')) return false
+  const hashed = hashApiKey(apiKey)
+  try {
+    const raw = await fs.readFile(apiKeyFile, 'utf8')
+    const keys = JSON.parse(raw)
+    const host = os.hostname()
+    return keys.some((k: any) => k.key === hashed && k.devOnly === true && k.host === host && k.revoked === false)
   } catch {
     return false
   }

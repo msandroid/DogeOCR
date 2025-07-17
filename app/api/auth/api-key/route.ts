@@ -1,65 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateApiKey, getUserApiKeys, revokeApiKey, deleteApiKey } from '../../../../lib/api-key-store'
 import { unrevokeApiKey } from '../../../../lib/api-key-store'
+import { z } from 'zod'
+import { getServerSession } from 'next-auth'
 
 // userIdはヘッダー 'x-user-id' で受け取る（本番は認証セッション推奨）
 
 export async function POST(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')
+  const session = await getServerSession()
+  const userId = session?.user?.id
   if (!userId) {
-    return NextResponse.json({ error: 'ユーザーIDが必要です' }, { status: 401 })
+    return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
-  const { name } = await request.json()
-  if (!name || typeof name !== 'string' || name.length === 0) {
-    return NextResponse.json({ error: 'APIキー名が必要です' }, { status: 400 })
+  const body = await request.json()
+  const schema = z.object({ name: z.string().min(1) })
+  const result = schema.safeParse(body)
+  if (!result.success) {
+    return NextResponse.json({ error: 'APIキー名が不正です', details: result.error.flatten() }, { status: 400 })
   }
+  const { name } = result.data
   const apiKey = await generateApiKey(userId, name)
   return NextResponse.json({ apiKey })
 }
 
 export async function GET(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')
+  const session = await getServerSession()
+  const userId = session?.user?.id
   if (!userId) {
-    return NextResponse.json({ error: 'ユーザーIDが必要です' }, { status: 401 })
+    return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
   const keys = await getUserApiKeys(userId)
   return NextResponse.json({ apiKeys: keys })
 }
 
 export async function DELETE(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')
+  const session = await getServerSession()
+  const userId = session?.user?.id
   if (!userId) {
-    return NextResponse.json({ error: 'ユーザーIDが必要です' }, { status: 401 })
+    return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
-  const { apiKey } = await request.json()
+  const body = await request.json()
+  const schema = z.object({ apiKey: z.string().min(1) })
+  const result = schema.safeParse(body)
+  if (!result.success) {
+    return NextResponse.json({ error: 'APIキーが不正です', details: result.error.flatten() }, { status: 400 })
+  }
+  const { apiKey } = result.data
   const keys = await getUserApiKeys(userId)
   if (!keys.some(k => k.key === apiKey)) {
     return NextResponse.json({ error: '指定されたAPIキーが見つかりません' }, { status: 404 })
   }
-  const result = await deleteApiKey(apiKey, true)
-  if (!result) {
+  const resultDelete = await deleteApiKey(apiKey, true)
+  if (!resultDelete) {
     return NextResponse.json({ error: 'APIキーの削除に失敗しました' }, { status: 500 })
   }
   return NextResponse.json({ success: true })
 }
 
 export async function PATCH(request: NextRequest) {
-  const userId = request.headers.get('x-user-id')
+  const session = await getServerSession()
+  const userId = session?.user?.id
   if (!userId) {
-    return NextResponse.json({ error: 'ユーザーIDが必要です' }, { status: 401 })
+    return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
-  const { apiKey, revoke } = await request.json()
+  const body = await request.json()
+  const schema = z.object({ apiKey: z.string().min(1), revoke: z.boolean() })
+  const result = schema.safeParse(body)
+  if (!result.success) {
+    return NextResponse.json({ error: 'リクエストボディが不正です', details: result.error.flatten() }, { status: 400 })
+  }
+  const { apiKey, revoke } = result.data
   const keys = await getUserApiKeys(userId)
   if (!keys.some(k => k.key === apiKey)) {
     return NextResponse.json({ error: '指定されたAPIキーが見つかりません' }, { status: 404 })
   }
-  let result = false
+  let resultOp = false
   if (revoke) {
-    result = await revokeApiKey(apiKey, true)
+    resultOp = await revokeApiKey(apiKey, true)
   } else {
-    result = await unrevokeApiKey(apiKey, true)
+    resultOp = await unrevokeApiKey(apiKey, true)
   }
-  if (!result) {
+  if (!resultOp) {
     return NextResponse.json({ error: 'APIキーの状態変更に失敗しました' }, { status: 500 })
   }
   return NextResponse.json({ success: true })
