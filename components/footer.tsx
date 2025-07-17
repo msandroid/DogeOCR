@@ -37,49 +37,16 @@ export default function Footer() {
                 プロダクト
               </Link>
             </li>
-            <li>
-              <Link className="text-muted-foreground hover:text-primary" href="/solutions#invoice">
-                請求書処理
-              </Link>
-            </li>
-            <li>
-              <Link className="text-muted-foreground hover:text-primary" href="/solutions#receipt">
-                レシート・領収書
-              </Link>
-            </li>
-            <li>
-              <Link className="text-muted-foreground hover:text-primary" href="/solutions#form">
-                各種帳票
-              </Link>
-            </li>
-            <li>
-              <Link className="text-muted-foreground hover:text-primary" href="/solutions#id-card">
-                身分証明書
-              </Link>
-            </li>
           </ul>
         </div>
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-foreground">会社概要</h3>
           <ul className="space-y-1">
             <li>
-              <Link className="text-muted-foreground hover:text-primary" href="/about">
-                会社について
-              </Link>
-            </li>
-            <li>
-              <Link className="text-muted-foreground hover:text-primary" href="/careers">
-                採用情報
-              </Link>
             </li>
             <li>
               <Link className="text-muted-foreground hover:text-primary" href="/contact">
                 お問い合わせ
-              </Link>
-            </li>
-            <li>
-              <Link className="text-muted-foreground hover:text-primary" href="/docs">
-                ドキュメント
               </Link>
             </li>
           </ul>

@@ -225,9 +225,6 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <div className="flex gap-4">
-              <Button variant="outline" asChild>
-                <Link href="/docs">ドキュメント</Link>
-              </Button>
               <Button variant="outline">
                 お問い合わせ
               </Button>

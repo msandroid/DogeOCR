@@ -44,9 +44,6 @@ export default function Header() {
         <Link className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground" href="/pricing">
           料金
         </Link>
-        <Link className="text-sm font-medium hover:underline underline-offset-4 text-muted-foreground" href="/docs">
-          ドキュメント
-        </Link>
         <Link className="text-sm font-medium hover:underline underline-offset-4 text-primary font-bold" href="/demo">
           デモ
         </Link>
@@ -54,12 +51,6 @@ export default function Header() {
       <div className="ml-auto flex items-center gap-4">
         <div className="hidden md:flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/settings">
-              <Settings className="h-[1.2rem] w-[1.2rem]" />
-              <span className="sr-only">設定</span>
-            </Link>
-          </Button>
           <AuthButton />
         </div>
         <Sheet>
@@ -109,14 +100,8 @@ export default function Header() {
               >
                 料金
               </Link>
-              <Link className="flex w-full items-center py-2 text-lg font-semibold text-muted-foreground" href="/docs">
-                ドキュメント
-              </Link>
               <Link className="flex w-full items-center py-2 text-lg font-semibold text-primary font-bold" href="/demo">
                 デモ
-              </Link>
-              <Link className="flex w-full items-center py-2 text-lg font-semibold text-muted-foreground" href="/settings">
-                設定
               </Link>
             </div>
             <div className="mt-4 px-4 space-y-2">

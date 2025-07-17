@@ -14,11 +14,6 @@ export default function HeroSection() {
                 {/* Changed from text-gray-900 */}
                 Doge Works: AIで文書処理と本人確認を自動化
               </h1>
-              <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                {/* Changed from text-gray-700 */}
-                Doge Worksは、高精度なOCR機能を提供する「Doge OCR API」と身分証明書の真正性を検証する「Doge ID Verify API」により、文書処理業務と本人確認プロセスを劇的に効率化します。
-                クラウドAPIとローカルSDKの2つの方法でお客様のニーズに対応。
-              </p>
             </div>
             <div className="flex flex-col gap-2 min-[400px]:flex-row">
               <Button
@@ -26,12 +21,6 @@ export default function HeroSection() {
                 asChild
               >
                 <Link href="/signup">無料で始める</Link>
-              </Button>
-              <Button
-                className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-8 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                asChild
-              >
-                <Link href="/docs">ドキュメント</Link>
               </Button>
             </div>
           </div>

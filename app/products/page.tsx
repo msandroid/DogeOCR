@@ -88,9 +88,6 @@ export default function ProductsPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button asChild className="flex-1">
-                <Link href="/docs">ドキュメント</Link>
-              </Button>
               <Button variant="outline" asChild className="flex-1">
                 <Link href="/demo">デモを試す</Link>
               </Button>

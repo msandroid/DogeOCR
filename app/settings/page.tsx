@@ -10,7 +10,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useSession } from "next-auth/react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import React from "react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -24,8 +24,13 @@ export default function SettingsPage() {
   const [showDialog, setShowDialog] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
   const [issuedKey, setIssuedKey] = useState<string|null>(null)
+  const [mounted, setMounted] = useState(false);
 
-  const userId = session?.user?.id
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const userId = (session?.user as any)?.id
 
   // APIキー一覧取得
   const fetchApiKeys = async () => {
@@ -114,7 +119,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {currentTheme === "dark" ? (
+                {mounted && currentTheme === "dark" ? (
                   <Moon className="h-5 w-5" />
                 ) : (
                   <Sun className="h-5 w-5" />
