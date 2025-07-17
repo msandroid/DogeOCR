@@ -32,6 +32,7 @@ async function main() {
     // レスポンス出力
     console.log('OCR API Response:', JSON.stringify(response.data, null, 2));
   } catch (err) {
+    console.error('詳細エラー:', err);
     if (err.response) {
       console.error('API Error:', err.response.status, err.response.data);
     } else {
