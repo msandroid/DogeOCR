@@ -23,18 +23,18 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import React from "react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { Doge } from 'react-chartjs-2'
+import { Line } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
   CategoryScale,
-  DogearScale,
+  LinearScale,
   PointElement,
-  DogeElement,
+  LineElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js'
-ChartJS.register(CategoryScale, DogearScale, PointElement, DogeElement, Title, Tooltip, Legend)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 const sidebarItems = [
   { icon: BarChart3, label: "Overview", href: "/dashboard", active: true },
@@ -240,7 +240,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="w-full max-w-3xl">
-              <Doge
+              <Line
                 data={{
                   labels: dummyDates,
                   datasets: [
