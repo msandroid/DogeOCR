@@ -40,7 +40,6 @@ const saveBase64Image = (base64Data: string, filename: string): string => {
 }
 
 import { spawn } from 'child_process'
-import path from 'path'
 
 // DeepFaceによる顔照合
 const performFaceVerification = async (idfacePath: string, facePath: string) => {

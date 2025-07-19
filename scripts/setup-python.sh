@@ -1,4 +1,4 @@
-#!/bin/bash
+npm run dev#!/bin/bash
 
 # Python環境のセットアップスクリプト
 
