@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -56,7 +56,7 @@ interface VerificationResult {
   reason?: string
 }
 
-export default function VerificationResultPage() {
+function VerificationResultContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -303,5 +303,20 @@ ${result.ageVerification ? `
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VerificationResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">認証結果を読み込み中...</p>
+        </div>
+      </div>
+    }>
+      <VerificationResultContent />
+    </Suspense>
   )
 } 

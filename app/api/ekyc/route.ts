@@ -39,29 +39,69 @@ const saveBase64Image = (base64Data: string, filename: string): string => {
   return filePath
 }
 
+import { spawn } from 'child_process'
+import path from 'path'
+
 // DeepFaceによる顔照合
 const performFaceVerification = async (idfacePath: string, facePath: string) => {
   try {
-    // DeepFaceライブラリを動的インポート
-    const { DeepFace } = await import('deepface')
+    // Pythonスクリプトのパス
+    const pythonScriptPath = path.join(process.cwd(), 'scripts', 'deepface-verify.py')
     
-    const result = await DeepFace.verify(
-      idfacePath,
-      facePath,
-      {
-        model_name: "VGG-Face",
-        distance_metric: "cosine",
-        enforce_detection: false
-      }
-    )
-    
-    return {
-      success: true,
-      score: result.distance,
-      verified: result.verified,
-      threshold: result.threshold,
-      model: result.model_name
-    }
+    // Pythonプロセスを実行
+    return new Promise((resolve, reject) => {
+      const pythonProcess = spawn('python3', [pythonScriptPath, idfacePath, facePath])
+      
+      let stdout = ''
+      let stderr = ''
+      
+      pythonProcess.stdout.on('data', (data) => {
+        stdout += data.toString()
+      })
+      
+      pythonProcess.stderr.on('data', (data) => {
+        stderr += data.toString()
+      })
+      
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const result = JSON.parse(stdout)
+            if (result.success) {
+              resolve({
+                success: true,
+                score: result.distance,
+                verified: result.verified,
+                threshold: result.threshold,
+                model: result.model_name
+              })
+            } else {
+              resolve({
+                success: false,
+                error: result.error || '顔照合処理に失敗しました'
+              })
+            }
+          } catch (error) {
+            resolve({
+              success: false,
+              error: '結果の解析に失敗しました'
+            })
+          }
+        } else {
+          resolve({
+            success: false,
+            error: `Pythonプロセスが終了コード ${code} で終了しました: ${stderr}`
+          })
+        }
+      })
+      
+      pythonProcess.on('error', (error) => {
+        resolve({
+          success: false,
+          error: `Pythonプロセスの実行に失敗しました: ${error.message}`
+        })
+      })
+    })
   } catch (error: any) {
     console.error('DeepFace顔照合エラー:', error)
     return {
