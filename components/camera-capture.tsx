@@ -14,6 +14,7 @@ interface CameraCaptureProps {
   aspectRatio?: "square" | "portrait" | "landscape"
   maxWidth?: number
   maxHeight?: number
+  useFrontCamera?: boolean
 }
 
 export default function CameraCapture({
@@ -22,7 +23,8 @@ export default function CameraCapture({
   description,
   aspectRatio = "portrait",
   maxWidth = 640,
-  maxHeight = 480
+  maxHeight = 480,
+  useFrontCamera = false
 }: CameraCaptureProps) {
   const [isStreaming, setIsStreaming] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string>("")
@@ -50,7 +52,7 @@ export default function CameraCapture({
         video: {
           width: { ideal: maxWidth },
           height: { ideal: maxHeight },
-          facingMode: "environment" // 背面カメラを優先
+          facingMode: useFrontCamera ? "user" : "environment" // フロントカメラまたは背面カメラ
         }
       }
 
@@ -216,7 +218,7 @@ export default function CameraCapture({
                       onClick={startCamera}
                       size="sm"
                       className="mt-2"
-                      variant="outline"
+                      variant="secondary"
                     >
                       再試行
                     </Button>
