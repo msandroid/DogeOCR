@@ -26,7 +26,7 @@ import {
   Clock
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useIsMobile, useSafariInfo } from "@/hooks/use-mobile"
+import { useIsMobile } from "@/hooks/use-mobile"
 import CameraCapture from "@/components/camera-capture"
 
 interface VerificationResult {
@@ -94,7 +94,6 @@ interface StepInfo {
 export default function EKYCPage() {
   const router = useRouter()
   const isMobile = useIsMobile()
-  const safariInfo = useSafariInfo()
   const [currentStep, setCurrentStep] = useState<EKYCStep>("loading")
   const [documentImage, setDocumentImage] = useState<string>("")
   const [selfieImage, setSelfieImage] = useState<string>("")
@@ -106,7 +105,6 @@ export default function EKYCPage() {
   const [result, setResult] = useState<VerificationResult | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [error, setError] = useState<string>("")
   const [stepProgress, setStepProgress] = useState<Record<EKYCStep, number>>({
     loading: 0,
     "document-capture": 0,
@@ -121,38 +119,16 @@ export default function EKYCPage() {
   
   const { toast } = useToast()
 
-  // Safari検出とデバイス判定
+  // デバイス判定とリダイレクト
   useEffect(() => {
-    try {
-      // Safari固有の処理
-      if (safariInfo?.isSafari) {
-        console.log("Safari検出:", safariInfo)
-        
-        // Safariでカメラがサポートされていない場合の処理
-        if (!safariInfo.supportsCamera) {
-          setError("Safariでカメラ機能がサポートされていません。ChromeまたはFirefoxをお試しください。")
-          setCurrentStep("loading")
-          return
-        }
-      }
-
-      // デバイス判定とリダイレクト
-      if (isMobile === false) {
-        // PCの場合はQRコードページにリダイレクト
-        router.push('/ekyc/qr')
-      } else if (isMobile === true) {
-        // モバイルの場合は認証ページを表示
-        setCurrentStep("document-capture")
-      } else {
-        // 判定が不明な場合はフォールバック
-        setCurrentStep("document-capture")
-      }
-    } catch (error) {
-      console.error("デバイス判定エラー:", error)
-      // エラーが発生した場合はフォールバック
+    if (isMobile === false) {
+      // PCの場合はQRコードページにリダイレクト
+      router.push('/ekyc/qr')
+    } else if (isMobile === true) {
+      // モバイルの場合は認証ページを表示
       setCurrentStep("document-capture")
     }
-  }, [isMobile, safariInfo, router])
+  }, [isMobile, router])
 
   const steps: StepInfo[] = [
     {
@@ -216,135 +192,192 @@ export default function EKYCPage() {
       title: "結果表示",
       description: "成功/失敗の明確な表示・年齢確認結果",
       icon: <CheckCircle className="h-5 w-5" />,
-              status: currentStep === "result" ? "active" : "pending"
+      status: currentStep === "result" ? "active" : 
+              currentStep === "result" ? "completed" : "pending"
     }
   ]
 
   const handleDocumentCapture = (imageData: string) => {
     setDocumentImage(imageData)
+    setStepProgress(prev => ({ ...prev, "document-capture": 100 }))
     setCurrentStep("ocr-processing")
+    
+    toast({
+      title: "身分証撮影完了",
+      description: "身分証明書の撮影が完了しました。OCR処理を開始します。",
+    })
+
+    // OCR処理のシミュレーション
     simulateOCRProcessing()
   }
 
   const simulateOCRProcessing = async () => {
     setStepProgress(prev => ({ ...prev, "ocr-processing": 0 }))
     
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 200))
-      setStepProgress(prev => ({ ...prev, "ocr-processing": i }))
-    }
-    
-    setCurrentStep("selfie-capture")
+    const interval = setInterval(() => {
+      setStepProgress(prev => {
+        const newProgress = prev["ocr-processing"] + 20
+        if (newProgress >= 100) {
+          clearInterval(interval)
+          setCurrentStep("selfie-capture")
+          return { ...prev, "ocr-processing": 100 }
+        }
+        return { ...prev, "ocr-processing": newProgress }
+      })
+    }, 500)
+
+    toast({
+      title: "OCR処理完了",
+      description: "身分証明書の情報を抽出しました。セルフィー撮影に進みます。",
+    })
   }
 
   const handleSelfieCapture = (imageData: string) => {
     setSelfieImage(imageData)
+    setStepProgress(prev => ({ ...prev, "selfie-capture": 100 }))
     setCurrentStep("face-verification")
+    
+    toast({
+      title: "セルフィー撮影完了",
+      description: "セルフィーの撮影が完了しました。顔認証処理を開始します。",
+    })
+
+    // 顔認証処理のシミュレーション
     simulateFaceVerification()
   }
 
   const simulateFaceVerification = async () => {
     setStepProgress(prev => ({ ...prev, "face-verification": 0 }))
     
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 150))
-      setStepProgress(prev => ({ ...prev, "face-verification": i }))
-    }
-    
-    setCurrentStep("age-verification")
-    await performVerification()
+    const interval = setInterval(() => {
+      setStepProgress(prev => {
+        const newProgress = prev["face-verification"] + 25
+        if (newProgress >= 100) {
+          clearInterval(interval)
+          setCurrentStep("age-verification")
+          return { ...prev, "face-verification": 100 }
+        }
+        return { ...prev, "face-verification": newProgress }
+      })
+    }, 400)
+
+    toast({
+      title: "顔認証完了",
+      description: "顔認証処理が完了しました。年齢確認に進みます。",
+    })
   }
 
   const handleSubmit = async () => {
     if (!documentImage || !selfieImage) {
       toast({
         title: "エラー",
-        description: "身分証とセルフィーの両方が必要です。",
+        description: "身分証明書とセルフィーの両方の撮影が必要です。",
         variant: "destructive"
       })
       return
     }
 
     setIsProcessing(true)
-    setCurrentStep("final-judgement")
-    
-    try {
-      await performVerification()
-    } catch (error) {
-      console.error("認証エラー:", error)
-      toast({
-        title: "認証エラー",
-        description: "認証処理中にエラーが発生しました。",
-        variant: "destructive"
+    setCurrentStep("security-check")
+    setStepProgress(prev => ({ ...prev, "age-verification": 100 }))
+
+    // セキュリティ処理のシミュレーション
+    const securityInterval = setInterval(() => {
+      setStepProgress(prev => {
+        const newProgress = prev["security-check"] + 33
+        if (newProgress >= 100) {
+          clearInterval(securityInterval)
+          setCurrentStep("final-judgement")
+          return { ...prev, "security-check": 100 }
+        }
+        return { ...prev, "security-check": newProgress }
       })
-      setIsProcessing(false)
-    }
+    }, 300)
+
+    // 最終判定のシミュレーション
+    setTimeout(() => {
+      setStepProgress(prev => ({ ...prev, "final-judgement": 100 }))
+      setCurrentStep("result")
+      
+      // 実際のAPI呼び出し
+      performVerification()
+    }, 1500)
   }
 
   const performVerification = async () => {
     try {
-      const formData = new FormData()
-      formData.append('documentImage', dataURLtoFile(documentImage, 'document.jpg'))
-      formData.append('faceImage', dataURLtoFile(selfieImage, 'selfie.jpg'))
-
-      const response = await fetch('/api/id-verify', {
-        method: 'POST',
-        body: formData
+      const response = await fetch("/api/id-verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          documentImage,
+          selfieImage,
+          userInfo: userInfo.name || userInfo.birthDate || userInfo.address ? userInfo : undefined,
+        }),
       })
 
       const data = await response.json()
 
       if (data.success) {
         setResult(data.data)
-        setCurrentStep("result")
+        setProgress(100)
         toast({
           title: "認証完了",
-          description: "eKYC認証が正常に完了しました。",
+          description: "eKYC認証が完了しました。",
         })
       } else {
         throw new Error(data.error || "認証に失敗しました")
       }
     } catch (error: any) {
-      console.error("API呼び出しエラー:", error)
-      
-      // Safari固有のエラーメッセージ
-      let errorMessage = error.message || "認証処理中にエラーが発生しました。"
-      if (safariInfo?.isSafari) {
-        errorMessage = "Safariで認証処理に問題が発生しました。ChromeまたはFirefoxをお試しください。"
-      }
-      
       toast({
-        title: "認証エラー",
-        description: errorMessage,
+        title: "エラー",
+        description: error.message || "認証処理中にエラーが発生しました。",
         variant: "destructive"
       })
-      
-      setError(errorMessage)
-      setCurrentStep("result")
+      setCurrentStep("document-capture")
     } finally {
       setIsProcessing(false)
     }
   }
 
-  // Base64データURLをFileオブジェクトに変換
-  const dataURLtoFile = (dataURL: string, filename: string): File => {
-    const arr = dataURL.split(',')
-    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
-    const bstr = atob(arr[1])
-    let n = bstr.length
-    const u8arr = new Uint8Array(n)
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n)
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "PASS":
+      case "VALID":
+      case "APPROVED":
+        return <CheckCircle className="h-5 w-5 text-green-500" />
+      case "FAIL":
+      case "INVALID":
+      case "REJECTED":
+        return <XCircle className="h-5 w-5 text-red-500" />
+      default:
+        return <AlertCircle className="h-5 w-5 text-yellow-500" />
     }
-    return new File([u8arr], filename, { type: mime })
   }
 
-  const getStatusIcon = (status: string) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "PASS":
+      case "VALID":
+      case "APPROVED":
+        return "bg-green-100 text-green-800"
+      case "FAIL":
+      case "INVALID":
+      case "REJECTED":
+        return "bg-red-100 text-red-800"
+      default:
+        return "bg-yellow-100 text-yellow-800"
+    }
+  }
+
+  const getStepStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
         return <CheckCircle className="h-4 w-4 text-green-500" />
       case "active":
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+        return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
       case "failed":
         return <XCircle className="h-4 w-4 text-red-500" />
       default:
@@ -352,61 +385,28 @@ export default function EKYCPage() {
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "text-green-600"
-      case "active":
-        return "text-blue-600"
-      case "failed":
-        return "text-red-600"
-      default:
-        return "text-gray-500"
-    }
-  }
-
-  const getStepStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-5 w-5 text-green-500" />
-      case "active":
-        return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-      case "failed":
-        return <XCircle className="h-5 w-5 text-red-500" />
-      default:
-        return <Clock className="h-5 w-5 text-gray-400" />
-    }
-  }
-
-  if (currentStep === "loading") {
+  // ローディング中は何も表示しない
+  if (isMobile === undefined || currentStep === "loading") {
     return (
       <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">eKYCシステムを初期化中...</p>
-            {safariInfo?.isSafari && (
-              <div className="mt-4 p-3 bg-orange-50 rounded-lg">
-              </div>
-            )}
+            <p className="text-muted-foreground">デバイスを確認中...</p>
           </div>
         </div>
       </div>
     )
   }
 
-  if (error) {
+  // PCの場合はリダイレクト中
+  if (isMobile === false) {
     return (
       <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-          <div className="mt-4">
-            <Button onClick={() => window.location.reload()}>
-              ページを再読み込み
-            </Button>
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">QRコードページにリダイレクト中...</p>
           </div>
         </div>
       </div>
@@ -414,177 +414,309 @@ export default function EKYCPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Shield className="h-6 w-6 text-primary" />
-            <h1 className="text-4xl font-light text-foreground">Doge eKYC</h1>
-                         {safariInfo?.isSafari && (
-               <Badge variant="secondary" className="text-xs">
-                 Safari
-               </Badge>
-             )}
-          </div>
-          <p className="text-lg text-muted-foreground">
-            包括的電子本人確認システム
+    <div className="min-h-screen bg-background py-4 px-4">
+      <div className="max-w-md mx-auto">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-light text-foreground mb-2">Doge eKYC</h1>
+          <p className="text-sm text-muted-foreground">
+            包括的電子本人確認
           </p>
-          {safariInfo?.isSafari && (
-            <div className="mt-2 p-2 bg-orange-50 rounded-lg">
-            </div>
-          )}
+          <div className="mt-2">
+            <Badge variant="outline" className="text-xs">
+              8段階認証フロー
+            </Badge>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* メインコンテンツ */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* 現在のステップ */}
-            {currentStep !== "result" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {getStepStatusIcon(steps.find(s => s.id === currentStep)?.status || "pending")}
-                    {steps.find(s => s.id === currentStep)?.title}
-                  </CardTitle>
-                  <CardDescription>
-                    {steps.find(s => s.id === currentStep)?.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {currentStep === "document-capture" && (
-                    <CameraCapture
-                      onCapture={handleDocumentCapture}
-                      title="身分証明書の撮影"
-                      description="身分証明書をカメラで撮影してください"
-                      aspectRatio="landscape"
-                    />
-                  )}
-                  
-                  {currentStep === "selfie-capture" && (
-                    <CameraCapture
-                      onCapture={handleSelfieCapture}
-                      title="セルフィーの撮影"
-                      description="顔をカメラで撮影してください"
-                      aspectRatio="portrait"
-                    />
-                  )}
-                  
-                  {(currentStep === "ocr-processing" || currentStep === "face-verification" || 
-                    currentStep === "age-verification" || currentStep === "security-check" || 
-                    currentStep === "final-judgement") && (
-                    <div className="space-y-4">
-                      <Progress value={stepProgress[currentStep]} className="w-full" />
-                      <p className="text-sm text-muted-foreground text-center">
-                        処理中... {stepProgress[currentStep]}%
-                      </p>
+        {/* プログレスステップ */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg">認証プロセス</CardTitle>
+            <CardDescription>
+              現在の進行状況: {steps.find(s => s.id === currentStep)?.title}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    {getStepStatusIcon(step.status)}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{step.title}</span>
+                      {step.id === currentStep && stepProgress[step.id] > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          {stepProgress[step.id]}%
+                        </span>
+                      )}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* 結果表示 */}
-            {currentStep === "result" && result && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {result.finalJudgement === "APPROVED" ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-500" />
+                    <p className="text-xs text-muted-foreground">{step.description}</p>
+                    {step.id === currentStep && stepProgress[step.id] > 0 && (
+                      <Progress value={stepProgress[step.id]} className="mt-1 h-1" />
                     )}
-                    認証結果
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium mb-2">文書情報</h4>
-                      <div className="space-y-1 text-sm">
-                        <p><span className="font-medium">文書種別:</span> {result.documentType}</p>
-                        {result.documentOcr.name && (
-                          <p><span className="font-medium">氏名:</span> {result.documentOcr.name}</p>
-                        )}
-                        {result.documentOcr.birthDate && (
-                          <p><span className="font-medium">生年月日:</span> {result.documentOcr.birthDate}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">認証結果</h4>
-                      <div className="space-y-1 text-sm">
-                        <p><span className="font-medium">顔認証:</span> {result.faceMatchResult}</p>
-                        <p><span className="font-medium">顔認証スコア:</span> {(result.faceMatchScore * 100).toFixed(1)}%</p>
-                        <p><span className="font-medium">最終判定:</span> {result.finalJudgement}</p>
-                      </div>
-                    </div>
                   </div>
-                  
-                  {result.ageVerification && (
-                    <div>
-                      <h4 className="font-medium mb-2">年齢確認</h4>
-                      <div className="space-y-1 text-sm">
-                        <p><span className="font-medium">年齢:</span> {result.ageVerification.age}歳</p>
-                        <p><span className="font-medium">成年判定:</span> {result.ageVerification.isAdult ? "成年" : "未成年"}</p>
-                        <p><span className="font-medium">理由:</span> {result.ageVerification.reason}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <Separator />
-                  
-                  <div className="text-center">
-                    <Button onClick={() => window.location.reload()}>
-                      新しい認証を開始
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* サイドバー - 進捗 */}
-          <div className="space-y-6">
+        {currentStep === "document-capture" && (
+          <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">認証進捗</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="h-5 w-5" />
+                  身分証撮影
+                </CardTitle>
+                <CardDescription>
+                  運転免許証、マイナンバーカード、パスポート等を撮影してください
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CameraCapture
+                  onCapture={handleDocumentCapture}
+                  title="身分証明書撮影"
+                  description="身分証明書全体がはっきり見えるように撮影してください"
+                  aspectRatio="landscape"
+                  maxWidth={640}
+                  maxHeight={480}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {currentStep === "ocr-processing" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                OCR処理中
+              </CardTitle>
+              <CardDescription>
+                Fireworks.aiによる統合OCR+LLM処理を実行中
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground">
+                  身分証明書の情報を抽出中...
+                </p>
+                <Progress value={stepProgress["ocr-processing"]} className="w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === "selfie-capture" && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  セルフィー撮影
+                </CardTitle>
+                <CardDescription>
+                  顔認識ガイド表示・生体検知によるリアルタイム撮影確認
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CameraCapture
+                  onCapture={handleSelfieCapture}
+                  title="セルフィー撮影"
+                  description="本人確認のため、顔がはっきり見えるセルフィーを撮影してください"
+                  aspectRatio="portrait"
+                  maxWidth={480}
+                  maxHeight={640}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {currentStep === "face-verification" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                顔認証処理中
+              </CardTitle>
+              <CardDescription>
+                身分証の顔写真とセルフィーを照合中
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground">
+                  同一人物判定を実行中...
+                </p>
+                <Progress value={stepProgress["face-verification"]} className="w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === "age-verification" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                年齢確認
+              </CardTitle>
+              <CardDescription>
+                実年齢計算・成年判定（18歳以上）
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground">
+                  年齢確認を実行中...
+                </p>
+                <Button 
+                  onClick={handleSubmit}
+                  disabled={isProcessing}
+                  className="w-full"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      処理中...
+                    </>
+                  ) : (
+                    "認証を完了"
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {(currentStep === "security-check" || currentStep === "final-judgement") && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {currentStep === "security-check" ? <Lock className="h-5 w-5" /> : <CheckSquare className="h-5 w-5" />}
+                {currentStep === "security-check" ? "セキュリティ処理" : "総合判定"}
+              </CardTitle>
+              <CardDescription>
+                {currentStep === "security-check" 
+                  ? "TLS暗号化・画像削除・認証トークン処理中"
+                  : "OCR信頼度・顔認証・年齢確認の総合判定中"
+                }
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center space-y-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-sm text-muted-foreground">
+                  {currentStep === "security-check" 
+                    ? "セキュリティ処理を実行中..."
+                    : "最終判定を実行中..."
+                  }
+                </p>
+                <Progress 
+                  value={stepProgress[currentStep]} 
+                  className="w-full" 
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {currentStep === "result" && result && (
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  認証結果
+                </CardTitle>
+                <CardDescription>
+                  成功/失敗の明確な表示・年齢確認結果
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {steps.map((step) => (
-                    <div key={step.id} className="flex items-center gap-3">
-                      {getStatusIcon(step.status)}
-                      <div className="flex-1">
-                        <p className={`text-sm font-medium ${getStatusColor(step.status)}`}>
-                          {step.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {step.description}
-                        </p>
+                  {/* 最終判定 */}
+                  <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      <span className="font-medium">最終判定</span>
+                    </div>
+                    <Badge className={getStatusColor(result.finalJudgement)}>
+                      {result.finalJudgement}
+                    </Badge>
+                  </div>
+
+                  {/* 年齢確認結果 */}
+                  {result.ageVerification && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium">年齢確認結果</h4>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">年齢:</span>
+                          <p className="font-medium">{result.ageVerification.age}歳</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">成年判定:</span>
+                          <p className="font-medium">
+                            {result.ageVerification.isAdult ? "成年" : "未成年"}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* 顔認証結果 */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium">顔認証結果</h4>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">スコア:</span>
+                        <p className="font-medium">{(result.faceMatchScore * 100).toFixed(1)}%</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">結果:</span>
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(result.faceMatchResult)}
+                          <span className="font-medium">{result.faceMatchResult}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 文書真贋判定 */}
+                  <div className="space-y-2">
+                    <h4 className="font-medium">文書真贋判定</h4>
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(result.documentAuthenticity)}
+                      <span className="font-medium">{result.documentAuthenticity}</span>
+                    </div>
+                  </div>
+
+                  {/* 処理時間 */}
+                  <div className="text-sm text-muted-foreground">
+                    処理時間: {result.processingTime}ms
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Safari情報 */}
-            {safariInfo?.isSafari && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Safari情報</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">バージョン:</span> {safariInfo.version}</p>
-                    <p><span className="font-medium">カメラサポート:</span> {safariInfo.supportsCamera ? "対応" : "非対応"}</p>
-                    <p><span className="font-medium">タッチサポート:</span> {safariInfo.supportsTouch ? "対応" : "非対応"}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <Button 
+              onClick={() => setCurrentStep("document-capture")}
+              variant="outline"
+              className="w-full"
+            >
+              新しい認証を開始
+            </Button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
