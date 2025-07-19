@@ -463,7 +463,6 @@ export default function EKYCPage() {
                       title="身分証明書の撮影"
                       description="身分証明書をカメラで撮影してください"
                       aspectRatio="landscape"
-                      cameraType="back" // 背面カメラを使用
                     />
                   )}
                   
@@ -473,7 +472,6 @@ export default function EKYCPage() {
                       title="セルフィーの撮影"
                       description="顔をカメラで撮影してください"
                       aspectRatio="portrait"
-                      cameraType="front" // 内側カメラを使用
                     />
                   )}
                   

@@ -508,13 +508,29 @@ export default function EKYCMobilePage({ params }: { params: { sessionId: string
         </Card>
 
         {currentStep === "document-capture" && (
-          <CameraCapture
-            onCapture={handleDocumentCapture}
-            title="身分証明書の撮影"
-            description="身分証明書をカメラで撮影してください"
-            aspectRatio="landscape"
-            cameraType="back" // 背面カメラを使用
-          />
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="h-5 w-5" />
+                  身分証撮影
+                </CardTitle>
+                <CardDescription>
+                  運転免許証、マイナンバーカード、パスポート等を撮影してください
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CameraCapture
+                  onCapture={handleDocumentCapture}
+                  title="身分証明書撮影"
+                  description="身分証明書全体がはっきり見えるように撮影してください"
+                  aspectRatio="landscape"
+                  maxWidth={640}
+                  maxHeight={480}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {currentStep === "ocr-processing" && (
@@ -541,13 +557,29 @@ export default function EKYCMobilePage({ params }: { params: { sessionId: string
         )}
 
         {currentStep === "selfie-capture" && (
-          <CameraCapture
-            onCapture={handleSelfieCapture}
-            title="セルフィーの撮影"
-            description="顔をカメラで撮影してください"
-            aspectRatio="portrait"
-            cameraType="front" // 内側カメラを使用
-          />
+          <div className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  セルフィー撮影
+                </CardTitle>
+                <CardDescription>
+                  顔認識ガイド表示・生体検知によるリアルタイム撮影確認
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CameraCapture
+                  onCapture={handleSelfieCapture}
+                  title="セルフィー撮影"
+                  description="本人確認のため、顔がはっきり見えるセルフィーを撮影してください"
+                  aspectRatio="portrait"
+                  maxWidth={480}
+                  maxHeight={640}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {currentStep === "face-verification" && (
