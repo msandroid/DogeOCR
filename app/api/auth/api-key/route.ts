@@ -3,15 +3,39 @@ import { generateApiKey, getUserApiKeys, revokeApiKey, deleteApiKey } from '../.
 import { unrevokeApiKey } from '../../../../lib/api-key-store'
 import { z } from 'zod'
 import { getServerSession } from 'next-auth'
+import { getUserSubscription, canUseApiKeys } from '../../../../lib/subscription-utils'
 
 // userIdはヘッダー 'x-user-id' で受け取る（本番は認証セッション推奨）
 
 export async function POST(request: NextRequest) {
+  // セッションからユーザーIDを取得
   const session = await getServerSession()
-  const userId = session?.user?.id
+  let userId = session?.user?.id
+  
+  // セッションから取得できない場合はヘッダーから取得
+  if (!userId) {
+    userId = request.headers.get('x-user-id') || undefined
+  }
+  
   if (!userId) {
     return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
+  
+  // サブスクリプション状態をチェック
+  const subscription = await getUserSubscription(userId)
+  if (!subscription) {
+    return NextResponse.json({ error: 'サブスクリプション情報が見つかりません' }, { status: 404 })
+  }
+  
+  // APIキー機能の利用権限をチェック
+  if (!canUseApiKeys(subscription.planType)) {
+    return NextResponse.json({ 
+      error: 'APIキー機能はPROプランまたはENTERPRISEプランでのみ利用可能です',
+      requiredPlan: 'PRO',
+      currentPlan: subscription.planType
+    }, { status: 403 })
+  }
+  
   const body = await request.json()
   const schema = z.object({ name: z.string().min(1) })
   const result = schema.safeParse(body)
@@ -24,21 +48,67 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // セッションからユーザーIDを取得
   const session = await getServerSession()
-  const userId = session?.user?.id
+  let userId = session?.user?.id
+  
+  // セッションから取得できない場合はヘッダーから取得
+  if (!userId) {
+    userId = request.headers.get('x-user-id') || undefined
+  }
+  
   if (!userId) {
     return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
+  
+  // サブスクリプション状態をチェック
+  const subscription = await getUserSubscription(userId)
+  if (!subscription) {
+    return NextResponse.json({ error: 'サブスクリプション情報が見つかりません' }, { status: 404 })
+  }
+  
+  // APIキー機能の利用権限をチェック
+  if (!canUseApiKeys(subscription.planType)) {
+    return NextResponse.json({ 
+      error: 'APIキー機能はPROプランまたはENTERPRISEプランでのみ利用可能です',
+      requiredPlan: 'PRO',
+      currentPlan: subscription.planType
+    }, { status: 403 })
+  }
+  
   const keys = await getUserApiKeys(userId)
   return NextResponse.json({ apiKeys: keys })
 }
 
 export async function DELETE(request: NextRequest) {
+  // セッションからユーザーIDを取得
   const session = await getServerSession()
-  const userId = session?.user?.id
+  let userId = session?.user?.id
+  
+  // セッションから取得できない場合はヘッダーから取得
+  if (!userId) {
+    userId = request.headers.get('x-user-id') || undefined
+  }
+  
   if (!userId) {
     return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
+  
+  // サブスクリプション状態をチェック
+  const subscription = await getUserSubscription(userId)
+  if (!subscription) {
+    return NextResponse.json({ error: 'サブスクリプション情報が見つかりません' }, { status: 404 })
+  }
+  
+  // APIキー機能の利用権限をチェック
+  if (!canUseApiKeys(subscription.planType)) {
+    return NextResponse.json({ 
+      error: 'APIキー機能はPROプランまたはENTERPRISEプランでのみ利用可能です',
+      requiredPlan: 'PRO',
+      currentPlan: subscription.planType
+    }, { status: 403 })
+  }
+  
   const body = await request.json()
   const schema = z.object({ apiKey: z.string().min(1) })
   const result = schema.safeParse(body)
@@ -58,11 +128,34 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  // セッションからユーザーIDを取得
   const session = await getServerSession()
-  const userId = session?.user?.id
+  let userId = session?.user?.id
+  
+  // セッションから取得できない場合はヘッダーから取得
+  if (!userId) {
+    userId = request.headers.get('x-user-id') || undefined
+  }
+  
   if (!userId) {
     return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 })
   }
+  
+  // サブスクリプション状態をチェック
+  const subscription = await getUserSubscription(userId)
+  if (!subscription) {
+    return NextResponse.json({ error: 'サブスクリプション情報が見つかりません' }, { status: 404 })
+  }
+  
+  // APIキー機能の利用権限をチェック
+  if (!canUseApiKeys(subscription.planType)) {
+    return NextResponse.json({ 
+      error: 'APIキー機能はPROプランまたはENTERPRISEプランでのみ利用可能です',
+      requiredPlan: 'PRO',
+      currentPlan: subscription.planType
+    }, { status: 403 })
+  }
+  
   const body = await request.json()
   const schema = z.object({ apiKey: z.string().min(1), revoke: z.boolean() })
   const result = schema.safeParse(body)

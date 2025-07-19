@@ -1,0 +1,30 @@
+{
+  "faceMatchThresholds": {
+    "approved": 0.8,
+    "rejected": 0.6,
+    "reviewRequired": 0.7
+  },
+  "documentAuthenticity": {
+    "validRequired": true,
+    "suspiciousAllowed": false
+  },
+  "ageRestrictions": {
+    "minimumAge": 18,
+    "maximumAge": null
+  },
+  "ocrConfidence": {
+    "minimumConfidence": 0.7
+  },
+  "additionalConditions": {
+    "requireNameMatch": false,
+    "requireBirthDateMatch": false,
+    "requireAddressMatch": false,
+    "allowManualReview": true
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2024-01-01T00:00:00.000Z",
+    "updatedBy": "system",
+    "description": "デフォルト設定"
+  }
+} 

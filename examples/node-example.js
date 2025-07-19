@@ -83,7 +83,6 @@ function displayResult(data, statusCode) {
     if (result.success) {
         const ocrData = result.data;
         console.log('✅ OCR処理成功');
-        console.log(`文書種別: ${ocrData.documentType || 'N/A'}`);
         console.log(`処理時間: ${ocrData.processingTime || 'N/A'}ms`);
         console.log(`信頼度: ${((ocrData.confidence || 0) * 100).toFixed(1)}%`);
         console.log(`APIバージョン: ${ocrData.apiVersion || 'N/A'}`);

@@ -14,7 +14,6 @@ const ocrResponseSchema = z.object({
   data: z.object({
     extractedText: z.string().describe("抽出されたテキスト"),
     structuredData: z.any().optional().describe("構造化されたデータ"),
-    documentType: z.string().describe("文書種別"),
     processingTime: z.number().describe("処理時間（ミリ秒）"),
     apiVersion: z.string().describe("APIバージョン"),
     confidence: z.number().describe("認識率"),
@@ -98,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     // プロンプト（demo.tsと同じ仕様に統一）
-    let promptText = `この画像に写っている内容を日本語で簡潔に説明し（content_description）、主要な情報をextracted_dataとしてRFC 8259に準拠した有効なJSONデータで出力してください。例：\n\n{\n  \"content_description\": \"この画像は...\",\n  \"extracted_data\": { ... }\n}\n\n必ずcontent_descriptionとextracted_dataを含めてください。値が不明な場合はnullを使い、全体を有効なJSONとして出力してください。`
+    let promptText = `この画像に写っている内容を説明し（content_description）、主要な情報をextracted_dataとしてRFC 8259に準拠した有効なJSONデータで出力してください。例：\n\n{\n  \"content_description\": \"この画像は...\",\n  \"extracted_data\": { ... }\n}\n\n必ずcontent_descriptionとextracted_dataを含めてください。値が不明な場合はnullを使い、全体を有効なJSONとして出力してください。`
     if (prompt && prompt.trim().length > 0) {
       promptText = prompt.trim()
     }
@@ -238,7 +237,6 @@ export async function GET() {
           data: {
             extractedText: "抽出されたテキスト",
             structuredData: "構造化されたデータ（JSONの場合）",
-            documentType: "文書種別",
             processingTime: "処理時間（ミリ秒）",
             apiVersion: "APIバージョン",
             confidence: "認識率"

@@ -557,7 +557,6 @@ export const COMPREHENSIVE_DOCUMENT_SCHEMAS = {
   // デフォルトスキーマ（不明な文書用）
   "不明": z.object({
     extracted_text: z.string().describe("抽出されたテキスト"),
-    possible_document_type: z.string().optional().describe("推定文書種別"),
     key_information: z.array(z.string()).optional().describe("重要情報"),
     ...CommonFieldsSchema.shape
   }).describe("不明文書情報")

@@ -21,6 +21,7 @@ const handler = NextAuth({
     async jwt({ user, token }) {
       if (user) {
         token.uid = user.id
+        token.sub = user.id
       }
       return token
     },

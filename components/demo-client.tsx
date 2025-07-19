@@ -308,18 +308,6 @@ export default function DemoClient() {
                 </p>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4 text-blue-500" />
-                  <span className="text-sm text-muted-foreground">文書種別</span>
-                </div>
-                <p className="text-lg font-semibold text-foreground">
-                  {ocrResult.documentType || '不明'}
-                </p>
-              </CardContent>
-            </Card>
           </div>
         )}
 
@@ -402,10 +390,6 @@ export default function DemoClient() {
                         <h4 className="text-foreground font-medium mb-2">認識情報</h4>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">文書種別</span>
-                            <Badge className="bg-primary text-primary-foreground">
-                              {ocrResult.documentType || '不明'}
-                            </Badge>
                           </div>
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">信頼度</span>

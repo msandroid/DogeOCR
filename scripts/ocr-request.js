@@ -3,7 +3,7 @@ const path = require('path');
 const axios = require('axios');
 
 // 設定
-const IMAGE_PATH = path.join(__dirname, '../examples/input/001.png');
+const IMAGE_PATH = path.join(__dirname, '../input/001.png');
 const API_URL = 'http://localhost:3000/api/ocr';
 
 async function main() {

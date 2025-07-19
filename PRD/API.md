@@ -388,3 +388,15 @@ app.use("/api", async (req, res, next) => {
 ---
 
 必要であれば、Go、Java、TypeScript、Shellなど他言語での具体例も追加できます。どの言語/フレームワークで実装する予定か教えてください。
+
+### 10.4 リクエスト例（curl: macOSでのBase64画像送信）
+
+```sh
+curl -X POST http://localhost:3000/api/ocr \
+  -H "Content-Type: application/json" \
+  -d "{\"image\": \"data:image/png;base64,$(base64 < input/001.png | tr -d '\n')\"}"
+```
+
+- `base64 < input/001.png | tr -d '\n'` で改行なしのBase64文字列を生成します（macOS用）。
+- 画像がJPEGの場合は `data:image/jpeg;base64,` に変更してください。
+- サーバーが本番の場合はURLを `https://api.example.com/v1/ocr/extract` などに変更してください。

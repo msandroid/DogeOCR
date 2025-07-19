@@ -16,13 +16,15 @@ import {
   HelpCircle,
   Calendar,
   TrendingUp,
-  Activity
+  Activity,
+  Crown
 } from "lucide-react"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import React from "react"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { canUseApiKeys } from "@/lib/subscription-utils"
 import { Line } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -42,7 +44,7 @@ const sidebarItems = [
   { icon: Activity, label: "Usage", href: "/dashboard/usage" },
   { icon: FileText, label: "API Keys", href: "/dashboard/api-keys" },
   { icon: CreditCard, label: "Billing & Invoices", href: "/billing" },
-  { icon: FileText, label: "Docs", href: "/docs" },
+  { icon: FileText, label: "Docs", href: "/dashboard/documents" },
   { icon: HelpCircle, label: "Contact Us", href: "/contact" },
 ]
 
@@ -56,6 +58,10 @@ export default function DashboardPage() {
   const [newKeyName, setNewKeyName] = useState("")
   const [issuedKey, setIssuedKey] = useState<string|null>(null)
   const userId = (session?.user as any)?.id
+  
+  // 仮実装: すべてのユーザーをFREEプランとして扱う
+  const currentPlan = 'FREE' as const
+  const canUseApi = canUseApiKeys(currentPlan)
 
   // ダミーAPI利用データ
   const [range, setRange] = useState<'1d'|'7d'|'30d'>('7d')
@@ -174,20 +180,39 @@ export default function DashboardPage() {
 
         {/* Navigation */}
         <nav className="space-y-1">
-          {sidebarItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                item.active 
-                  ? "bg-accent text-accent-foreground" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
-              }`}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
-          ))}
+          {sidebarItems.map((item) => {
+            // APIキー項目はPROプラン以上でのみ表示
+            if (item.label === "API Keys" && !canUseApi) {
+              return (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground opacity-50 cursor-not-allowed"
+                  title="PROプラン以上が必要です"
+                >
+                  <Crown className="h-4 w-4" />
+                  <span className="flex items-center gap-1">
+                    {item.label}
+                    <span className="text-xs bg-muted px-1 rounded">PRO+</span>
+                  </span>
+                </div>
+              )
+            }
+            
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                  item.active 
+                    ? "bg-accent text-accent-foreground" 
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                }`}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
       </div>
 

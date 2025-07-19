@@ -5,7 +5,6 @@ import { z } from "zod"
 // 基本的なOCR結果の型定義
 const basicOcrOutputSchema = z.object({
   extractedText: z.string().describe("抽出されたテキスト"),
-  documentType: z.string().optional().describe("文書種別"),
   processingTime: z.number().describe("処理時間（ミリ秒）"),
   apiVersion: z.string().default("v1.0"),
   confidence: z.number().min(0).max(1).optional().describe("認識率"),
@@ -57,7 +56,7 @@ export async function handleImageUpload(
   const imagePreview = `data:${file.type};base64,${buffer.toString("base64")}`
 
   // プロンプト
-  let promptText = `この画像に写っている内容を日本語で簡潔に説明し（content_description）、主要な情報をextracted_dataとしてRFC 8259に準拠した有効なJSONデータで出力してください。例：\n\n{\n  \"content_description\": \"この画像は...\",\n  \"extracted_data\": { ... }\n}\n\n必ずcontent_descriptionとextracted_dataを含めてください。値が不明な場合はnullを使い、全体を有効なJSONとして出力してください。`
+  let promptText = `この画像に写っている内容を説明し（content_description）、主要な情報をextracted_dataとしてRFC 8259に準拠した有効なJSONデータで出力してください。例：\n\n{\n  \"content_description\": \"この画像は...\",\n  \"extracted_data\": { ... }\n}\n\n必ずcontent_descriptionとextracted_dataを含めてください。値が不明な場合はnullを使い、全体を有効なJSONとして出力してください。`
 
   // チャット欄の入力があれば追加プロンプトとして使用
   if (userPrompt && userPrompt.trim().length > 0) {

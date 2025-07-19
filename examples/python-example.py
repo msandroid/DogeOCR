@@ -73,7 +73,6 @@ def display_result(result, status_code):
     if result.get('success'):
         data = result['data']
         print("✅ OCR処理成功")
-        print(f"文書種別: {data.get('documentType', 'N/A')}")
         print(f"処理時間: {data.get('processingTime', 'N/A')}ms")
         print(f"信頼度: {data.get('confidence', 'N/A'):.1%}")
         print(f"APIバージョン: {data.get('apiVersion', 'N/A')}")
