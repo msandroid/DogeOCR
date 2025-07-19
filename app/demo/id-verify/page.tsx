@@ -20,8 +20,6 @@ export default function IDVerifyDemoPage() {
               className="mb-4"
             >
               <Link href="/demo">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                デモ一覧に戻る
               </Link>
             </Button>
           </div>
@@ -141,8 +139,6 @@ export default function IDVerifyDemoPage() {
               </p>
               <Button asChild className="w-full">
                 <Link href="/demo/ocr">
-                  <span className="text-lg mr-2">📄</span>
-                  OCR Demo
                 </Link>
               </Button>
             </CardContent>

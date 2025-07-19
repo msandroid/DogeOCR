@@ -14,6 +14,23 @@ interface CameraCaptureProps {
   aspectRatio?: "square" | "portrait" | "landscape"
   maxWidth?: number
   maxHeight?: number
+  facingMode?: "user" | "environment"
+}
+
+// Safari検出関数
+const isSafari = () => {
+  if (typeof navigator === 'undefined') return false
+  
+  const userAgent = navigator.userAgent.toLowerCase()
+  return /safari/.test(userAgent) && !/chrome/.test(userAgent)
+}
+
+// iOS Safari検出関数
+const isIOSSafari = () => {
+  if (typeof navigator === 'undefined') return false
+  
+  const userAgent = navigator.userAgent.toLowerCase()
+  return /iphone|ipad|ipod/.test(userAgent) && /safari/.test(userAgent) && !/chrome/.test(userAgent)
 }
 
 export default function CameraCapture({
@@ -22,18 +39,29 @@ export default function CameraCapture({
   description,
   aspectRatio = "portrait",
   maxWidth = 640,
-  maxHeight = 480
+  maxHeight = 480,
+  facingMode = "environment"
 }: CameraCaptureProps) {
   const [isStreaming, setIsStreaming] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string>("")
   const [error, setError] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isSafariBrowser, setIsSafariBrowser] = useState(false)
+  const [isIOSSafariBrowser, setIsIOSSafariBrowser] = useState(false)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   
   const { toast } = useToast()
+
+  // Safari検出
+  useEffect(() => {
+    const safari = isSafari()
+    const iosSafari = isIOSSafari()
+    setIsSafariBrowser(safari)
+    setIsIOSSafariBrowser(iosSafari)
+  }, [])
 
   // カメラストリームの開始
   const startCamera = async () => {
@@ -46,13 +74,30 @@ export default function CameraCapture({
         throw new Error("このブラウザはカメラ機能をサポートしていません")
       }
 
-      const constraints = {
-        video: {
-          width: { ideal: maxWidth },
-          height: { ideal: maxHeight },
-          facingMode: "environment" // 背面カメラを優先
+      // Safari固有のカメラ設定
+      let constraints
+      if (isSafariBrowser) {
+        // Safariではより基本的な設定を使用
+        constraints = {
+          video: {
+            width: { ideal: Math.min(maxWidth, 1280) },
+            height: { ideal: Math.min(maxHeight, 720) },
+            // SafariではfacingModeの指定を避ける
+            ...(isIOSSafariBrowser ? {} : { facingMode })
+          }
+        }
+      } else {
+        // 通常のブラウザの設定
+        constraints = {
+          video: {
+            width: { ideal: maxWidth },
+            height: { ideal: maxHeight },
+            facingMode // 指定されたカメラを使用
+          }
         }
       }
+
+      console.log("カメラ起動開始:", constraints)
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
@@ -60,10 +105,12 @@ export default function CameraCapture({
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         videoRef.current.onloadedmetadata = () => {
+          console.log("カメラ起動完了")
           setIsStreaming(true)
           setIsLoading(false)
         }
-        videoRef.current.onerror = () => {
+        videoRef.current.onerror = (error) => {
+          console.error("ビデオエラー:", error)
           setError("ビデオストリームの読み込みに失敗しました")
           setIsLoading(false)
         }
@@ -80,6 +127,20 @@ export default function CameraCapture({
         errorMessage = "このブラウザはカメラ機能をサポートしていません。"
       } else if (err.name === "NotReadableError") {
         errorMessage = "カメラが他のアプリケーションで使用中です。"
+      } else if (err.name === "OverconstrainedError") {
+        // Safari固有のエラー処理
+        if (isSafariBrowser) {
+          errorMessage = "Safariでカメラ設定に問題が発生しました。ブラウザを更新するか、別のブラウザをお試しください。"
+        } else {
+          errorMessage = "カメラの設定に問題が発生しました。"
+        }
+      } else if (err.name === "TypeError") {
+        // Safariでよくあるエラー
+        if (isSafariBrowser) {
+          errorMessage = "Safariでカメラ機能に問題が発生しました。HTTPS接続でアクセスしているか確認してください。"
+        } else {
+          errorMessage = "カメラ機能の初期化に失敗しました。"
+        }
       }
       
       setError(errorMessage)
@@ -134,8 +195,16 @@ export default function CameraCapture({
       // ビデオフレームをキャンバスに描画
       context.drawImage(video, 0, 0, canvas.width, canvas.height)
 
-      // 画像データを取得
-      const imageData = canvas.toDataURL("image/jpeg", 0.8)
+      // Safari固有のBase64処理
+      let imageData
+      if (isSafariBrowser) {
+        // Safariではより低い品質でBase64エンコード
+        imageData = canvas.toDataURL("image/jpeg", 0.7)
+      } else {
+        // 通常のブラウザの処理
+        imageData = canvas.toDataURL("image/jpeg", 0.8)
+      }
+      
       setCapturedImage(imageData)
       onCapture(imageData)
 
@@ -148,9 +217,16 @@ export default function CameraCapture({
       })
     } catch (error) {
       console.error("撮影エラー:", error)
+      
+      // Safari固有のエラーメッセージ
+      let errorMessage = "画像の撮影に失敗しました。"
+      if (isSafariBrowser) {
+        errorMessage = "Safariで画像の撮影に失敗しました。ブラウザを更新するか、別のブラウザをお試しください。"
+      }
+      
       toast({
         title: "撮影エラー",
-        description: "画像の撮影に失敗しました。",
+        description: errorMessage,
         variant: "destructive"
       })
     }
@@ -191,44 +267,43 @@ export default function CameraCapture({
         <CardTitle className="flex items-center gap-2 text-sm">
           <Camera className="h-4 w-4" />
           {title}
+          {isSafariBrowser && (
+            <Badge variant="outline" className="text-xs">
+              Safari
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription className="text-xs">
           {description}
+          {isSafariBrowser && (
+            <span className="block mt-1 text-orange-600">
+              Safari互換モードで動作中
+            </span>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-3">
-          {/* カメラプレビュー */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           {!capturedImage && (
-            <div className={`relative ${getAspectRatioClass()} bg-black rounded-lg overflow-hidden`}>
+            <div className={`relative ${getAspectRatioClass()} bg-gray-100 rounded-lg overflow-hidden`}>
               {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <div className="text-white text-sm">カメラ起動中...</div>
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                 </div>
               )}
               
-              {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                  <div className="text-center text-white">
-                    <AlertCircle className="h-8 w-8 mx-auto mb-2 text-red-400" />
-                    <div className="text-sm">{error}</div>
-                    <Button
-                      onClick={startCamera}
-                      size="sm"
-                      className="mt-2"
-                      variant="outline"
-                    >
-                      再試行
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-              {!isLoading && !error && !isStreaming && (
+              {!isStreaming && !isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <Camera className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <div className="text-sm">カメラを起動してください</div>
+                  <div className="text-center">
+                    <Camera className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-500">カメラを起動してください</p>
                   </div>
                 </div>
               )}
@@ -241,83 +316,73 @@ export default function CameraCapture({
                 className={`w-full h-full object-cover ${isStreaming ? 'block' : 'hidden'}`}
               />
               
-              {/* 隠しキャンバス要素（撮影用） */}
               <canvas
                 ref={canvasRef}
-                style={{ display: 'none' }}
+                className="hidden"
               />
             </div>
           )}
 
-          {/* 撮影された画像 */}
           {capturedImage && (
-            <div className={`relative ${getAspectRatioClass()} bg-black rounded-lg overflow-hidden`}>
+            <div className={`relative ${getAspectRatioClass()} bg-gray-100 rounded-lg overflow-hidden`}>
               <img
                 src={capturedImage}
                 alt="撮影された画像"
                 className="w-full h-full object-cover"
               />
               <div className="absolute top-2 right-2">
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  撮影完了
-                </Badge>
+                <CheckCircle className="h-6 w-6 text-green-500 bg-white rounded-full p-1" />
               </div>
             </div>
           )}
 
-          {/* 操作ボタン */}
-          <div className="flex items-center gap-2">
+          <div className="flex gap-2">
             {!capturedImage && !isStreaming && !isLoading && (
               <Button
                 onClick={startCamera}
-                size="sm"
-                className="flex items-center gap-2"
+                disabled={isLoading}
+                className="flex-1"
               >
-                <Camera className="h-3 w-3" />
-                カメラ起動
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    起動中...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="h-4 w-4 mr-2" />
+                    カメラ起動
+                  </>
+                )}
               </Button>
             )}
-            
-            {isStreaming && (
+
+            {isStreaming && !capturedImage && (
               <Button
                 onClick={captureImage}
-                size="sm"
-                className="flex items-center gap-2"
+                className="flex-1"
               >
-                <Camera className="h-3 w-3" />
+                <Camera className="h-4 w-4 mr-2" />
                 撮影
               </Button>
             )}
-            
+
             {capturedImage && (
               <Button
                 onClick={resetCapture}
-                variant="outDoge"
-                size="sm"
-                className="flex items-center gap-2"
+                variant="outline"
+                className="flex-1"
               >
-                <RotateCcw className="h-3 w-3" />
+                <RotateCcw className="h-4 w-4 mr-2" />
                 再撮影
-              </Button>
-            )}
-            
-            {isStreaming && (
-              <Button
-                onClick={stopCamera}
-                variant="outDoge"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                停止
               </Button>
             )}
           </div>
 
-          {/* エラーメッセージ */}
-          {error && (
-            <div className="text-xs text-red-500 bg-red-50 p-2 rounded">
-              {error}
+          {isSafariBrowser && (
+            <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
+              <p className="font-medium">Safari互換モード</p>
+              <p>カメラ機能が制限される場合があります。問題が発生した場合は、ChromeまたはFirefoxをお試しください。</p>
             </div>
           )}
         </div>

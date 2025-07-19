@@ -152,19 +152,9 @@ export default function QRCodePage() {
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.history.back()}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            戻る
-          </Button>
-          
           <div className="flex items-center justify-center gap-2 mb-4">
             <Monitor className="h-6 w-6 text-primary" />
-            <h1 className="text-4xl font-light text-foreground">PC認証</h1>
+            <h1 className="text-4xl text-foreground" style={{ fontFamily: "'Lato', sans-serif", fontWeight: 800 }}>Doge ID Verify API</h1>
           </div>
           <p className="text-lg text-muted-foreground">
             スマートフォンでQRコードを読み取って認証を開始してください
@@ -183,10 +173,10 @@ export default function QRCodePage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <QrCode className="h-5 w-5" />
-              QRコード
+              eKYC認証
             </CardTitle>
             <CardDescription>
-              スマートフォンのカメラでQRコードを読み取ってください
+              スマートフォンのカメラでQRコードを読み取ってください。
             </CardDescription>
           </CardHeader>
           <CardContent>

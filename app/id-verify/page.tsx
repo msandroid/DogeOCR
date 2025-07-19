@@ -256,48 +256,6 @@ export default function IDVerifyPage() {
               />
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>基本情報（オプション）</CardTitle>
-                <CardDescription>
-                  申請時の情報と照合するため、基本情報を入力してください
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">氏名</label>
-                    <input
-                      type="text"
-                      value={userInfo.name}
-                      onChange={(e) => setUserInfo(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="山田 太郎"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">生年月日</label>
-                    <input
-                      type="date"
-                      value={userInfo.birthDate}
-                      onChange={(e) => setUserInfo(prev => ({ ...prev, birthDate: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-md"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">住所</label>
-                    <input
-                      type="text"
-                      value={userInfo.address}
-                      onChange={(e) => setUserInfo(prev => ({ ...prev, address: e.target.value }))}
-                      className="w-full px-3 py-2 border rounded-md"
-                      placeholder="東京都新宿区..."
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             <div className="flex justify-center">
               <Button
                 onClick={handleSubmit}
