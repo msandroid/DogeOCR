@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Camera, RotateCcw, CheckCircle, AlertCircle } from "lucide-react"
+import { Camera, RotateCcw, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface CameraCaptureProps {
   onCapture: (imageData: string) => void
@@ -46,6 +47,8 @@ export default function CameraCapture({
   const [isLoading, setIsLoading] = useState(false)
   const [isSafariBrowser, setIsSafariBrowser] = useState(false)
   const [isIOSSafariBrowser, setIsIOSSafariBrowser] = useState(false)
+  const [currentCamera, setCurrentCamera] = useState<"environment" | "user">("environment")
+  const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([])
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -61,17 +64,43 @@ export default function CameraCapture({
     setIsIOSSafariBrowser(iosSafari)
   }, [])
 
+  // 利用可能なカメラを取得
+  const getAvailableCameras = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        return []
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(device => device.kind === 'videoinput')
+      setAvailableCameras(videoDevices)
+      return videoDevices
+    } catch (error) {
+      console.error('カメラ一覧の取得に失敗:', error)
+      return []
+    }
+  }
+
   // カメラストリームの開始
-  const startCamera = async () => {
+  const startCamera = async (facingMode?: "environment" | "user") => {
     try {
       setIsLoading(true)
       setError("")
+      
+      // 現在のストリームを停止
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+      }
       
       // カメラ権限の確認
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("このブラウザはカメラ機能をサポートしていません")
       }
 
+      // 利用可能なカメラを取得
+      const cameras = await getAvailableCameras()
+      
       // Safari固有のカメラ設定
       let constraints
       if (isSafariBrowser) {
@@ -80,8 +109,8 @@ export default function CameraCapture({
           video: {
             width: { ideal: Math.min(maxWidth, 1280) },
             height: { ideal: Math.min(maxHeight, 720) },
-            // SafariではfacingModeの指定を避ける
-            ...(isIOSSafariBrowser ? {} : { facingMode: "environment" })
+            // SafariではfacingModeの指定を避ける（iOS Safariの場合）
+            ...(isIOSSafariBrowser ? {} : { facingMode: facingMode || currentCamera })
           }
         }
       } else {
@@ -90,13 +119,17 @@ export default function CameraCapture({
           video: {
             width: { ideal: maxWidth },
             height: { ideal: maxHeight },
-            facingMode: "environment" // 背面カメラを優先
+            facingMode: facingMode || currentCamera
           }
         }
       }
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
+      
+      if (facingMode) {
+        setCurrentCamera(facingMode)
+      }
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream
@@ -136,6 +169,26 @@ export default function CameraCapture({
       toast({
         title: "カメラエラー",
         description: errorMessage,
+        variant: "destructive"
+      })
+    }
+  }
+
+  // カメラの切り替え
+  const switchCamera = async () => {
+    const newCamera = currentCamera === "environment" ? "user" : "environment"
+    
+    // 利用可能なカメラが2つ以上ある場合のみ切り替え
+    if (availableCameras.length >= 2) {
+      await startCamera(newCamera)
+      toast({
+        title: "カメラ切り替え",
+        description: `${newCamera === "environment" ? "背面" : "前面"}カメラに切り替えました。`,
+      })
+    } else {
+      toast({
+        title: "カメラ切り替え",
+        description: "利用可能なカメラが1つしかありません。",
         variant: "destructive"
       })
     }
@@ -248,6 +301,10 @@ export default function CameraCapture({
     }
   }
 
+  const getCameraLabel = () => {
+    return currentCamera === "environment" ? "背面カメラ" : "前面カメラ"
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -255,7 +312,7 @@ export default function CameraCapture({
           <Camera className="h-4 w-4" />
           {title}
           {isSafariBrowser && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="secondary" className="text-xs">
               Safari
             </Badge>
           )}
@@ -263,9 +320,6 @@ export default function CameraCapture({
         <CardDescription className="text-xs">
           {description}
           {isSafariBrowser && (
-            <span className="block mt-1 text-orange-600">
-              Safari互換モードで動作中
-            </span>
           )}
         </CardDescription>
       </CardHeader>
@@ -307,6 +361,30 @@ export default function CameraCapture({
                 ref={canvasRef}
                 className="hidden"
               />
+
+              {/* カメラ切り替えボタン */}
+              {isStreaming && availableCameras.length >= 2 && (
+                <div className="absolute top-2 right-2">
+                  <Button
+                    onClick={switchCamera}
+                    size="sm"
+                    variant="secondary"
+                    className="bg-black bg-opacity-50 text-white hover:bg-opacity-70"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    {currentCamera === "environment" ? "前面" : "背面"}
+                  </Button>
+                </div>
+              )}
+
+              {/* 現在のカメラ表示 */}
+              {isStreaming && (
+                <div className="absolute bottom-2 left-2">
+                  <Badge variant="secondary" className="bg-black bg-opacity-50 text-white">
+                    {getCameraLabel()}
+                  </Badge>
+                </div>
+              )}
             </div>
           )}
 
@@ -326,7 +404,7 @@ export default function CameraCapture({
           <div className="flex gap-2">
             {!capturedImage && !isStreaming && !isLoading && (
               <Button
-                onClick={startCamera}
+                onClick={() => startCamera()}
                 disabled={isLoading}
                 className="flex-1"
               >
@@ -345,19 +423,31 @@ export default function CameraCapture({
             )}
 
             {isStreaming && !capturedImage && (
-              <Button
-                onClick={captureImage}
-                className="flex-1"
-              >
-                <Camera className="h-4 w-4 mr-2" />
-                撮影
-              </Button>
+              <>
+                <Button
+                  onClick={captureImage}
+                  className="flex-1"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  撮影
+                </Button>
+                                 {availableCameras.length >= 2 && (
+                   <Button
+                     onClick={switchCamera}
+                     variant="secondary"
+                     size="sm"
+                   >
+                     <RefreshCw className="h-3 w-3 mr-1" />
+                     切り替え
+                   </Button>
+                 )}
+              </>
             )}
 
             {capturedImage && (
               <Button
                 onClick={resetCapture}
-                variant="outline"
+                variant="secondary"
                 className="flex-1"
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
@@ -366,10 +456,11 @@ export default function CameraCapture({
             )}
           </div>
 
-          {isSafariBrowser && (
-            <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
-              <p className="font-medium">Safari互換モード</p>
-              <p>カメラ機能が制限される場合があります。問題が発生した場合は、ChromeまたはFirefoxをお試しください。</p>
+          {/* カメラ情報 */}
+          {availableCameras.length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              <p>利用可能なカメラ: {availableCameras.length}台</p>
+              <p>現在のカメラ: {getCameraLabel()}</p>
             </div>
           )}
         </div>

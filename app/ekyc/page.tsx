@@ -387,9 +387,6 @@ export default function EKYCPage() {
             <p className="text-muted-foreground">eKYCシステムを初期化中...</p>
             {safariInfo?.isSafari && (
               <div className="mt-4 p-3 bg-orange-50 rounded-lg">
-                <p className="text-sm text-orange-700">
-                  Safari互換モードで動作中
-                </p>
               </div>
             )}
           </div>
@@ -434,9 +431,6 @@ export default function EKYCPage() {
           </p>
           {safariInfo?.isSafari && (
             <div className="mt-2 p-2 bg-orange-50 rounded-lg">
-              <p className="text-sm text-orange-700">
-                Safari互換モードで動作中 - 一部機能が制限される場合があります
-              </p>
             </div>
           )}
         </div>
