@@ -382,7 +382,7 @@ async function processDocumentOCR(documentImage: string, apiKey: string) {
   }
 }
 
-// Fireworks.ai APIを使用した顔認証処理
+// Vison AI APIを使用した顔認証処理
 async function processFaceMatching(documentImage: string, selfieImage: string, apiKey: string) {
   try {
     const { initializeFaceRecognitionService, faceRecognitionService } = await import('../../../lib/face-recognition')
@@ -392,7 +392,7 @@ async function processFaceMatching(documentImage: string, selfieImage: string, a
       initializeFaceRecognitionService(apiKey)
     }
     
-    // Fireworks.ai APIを使用した顔照合実行
+    // Vison AI APIを使用した顔照合実行
     const faceMatchResult = await faceRecognitionService!.compareFaces(documentImage, selfieImage)
     
     return {

@@ -12,9 +12,6 @@ export default function DemoPage() {
       <div className="max-w-6xl mx-auto">
         {/* ヘッダー */}
         <div className="text-center mb-8">
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            世界中のあらゆる文書のOCRと、日本の犯罪収益移転防止法に準拠したeKYC認証を体験
-          </p>
         </div>
 
         {/* デモ選択カード */}

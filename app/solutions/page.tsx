@@ -66,7 +66,7 @@ export default function SolutionsPage() {
               構造化JSONに。
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
-              DogeOCRは、どんな文書・画像もアップロードするだけでAIが自動判別し、構造化されたJSONデータに変換します。
+              DogeOCRは、どんな書式の文書でも画像をアップロードするだけでAIが読み取り、構造化されたJSONデータを提供します。
             </p>
           </div>
 

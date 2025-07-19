@@ -24,62 +24,15 @@ export default function OCRDemoPage() {
           
           <div className="flex items-center justify-center gap-3 mb-4">
             <FileText className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl text-foreground" style={{ fontFamily: "'Lato', sans-serif", fontWeight: 800 }}>Doge OCR API</h1>
+            <h1 className="text-4xl text-foreground" style={{ fontFamily: "'Lato', sans-serif", fontWeight: 800 }}>Doge OCR</h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
             世界中のあらゆる文書のOCRと構造化データ抽出
           </p>
-          
-          {/* 機能バッジ */}
-          <div className="flex justify-center gap-2 mb-6">
-            <div className="flex items-center gap-1 px-3 py-1 bg-primary/10 rounded-full">
-              <Globe className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">多言語対応</span>
-            </div>
-            <div className="flex items-center gap-1 px-3 py-1 bg-primary/10 rounded-full">
-              <Zap className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">リアルタイム処理</span>
-            </div>
-            <div className="flex items-center gap-1 px-3 py-1 bg-primary/10 rounded-full">
-              <Shield className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">高精度</span>
-            </div>
-          </div>
         </div>
-        
+
         {/* デモセクション */}
         <div className="bg-card rounded-2xl border border-border p-6">
-          <div className="text-center mb-6">
-            
-            {/* 機能リスト */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-xs">✓</span>
-                </div>
-                <p className="text-xs text-muted-foreground">世界中のあらゆる文書に対応</p>
-              </div>
-              <div className="text-center">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-xs">✓</span>
-                </div>
-                <p className="text-xs text-muted-foreground">高精度な文字認識</p>
-              </div>
-              <div className="text-center">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-xs">✓</span>
-                </div>
-                <p className="text-xs text-muted-foreground">構造化データの自動抽出</p>
-              </div>
-              <div className="text-center">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-xs">✓</span>
-                </div>
-                <p className="text-xs text-muted-foreground">リアルタイム処理</p>
-              </div>
-            </div>
-          </div>
-          
           <div className="max-h-[600px] overflow-y-auto">
             <DemoClient />
           </div>

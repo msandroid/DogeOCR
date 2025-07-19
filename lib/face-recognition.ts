@@ -22,7 +22,7 @@ export interface FaceDetectionResult {
 }
 
 /**
- * Fireworks.ai APIを使用した顔照合機能
+ * Vison AI APIを使用した顔照合機能
  */
 export class FaceRecognitionService {
   private apiKey: string
