@@ -261,7 +261,9 @@ export default function MobileIDVerifyPage({ params }: { params: { sessionId: st
             閉じる
           </Button>
           
-          <h1 className="text-2xl font-light text-foreground mb-2">Doge ID Verify</h1>
+          <h1 className="text-2xl text-foreground mb-2" style={{ fontFamily: "'Lato', sans-serif", fontWeight: 800 }}>
+            Doge ID Verify
+          </h1>
           <p className="text-sm text-muted-foreground">
             スマートフォン認証
           </p>
@@ -291,10 +293,11 @@ export default function MobileIDVerifyPage({ params }: { params: { sessionId: st
               <CameraCapture
                 onCapture={handleSelfieCapture}
                 title="セルフィー撮影"
-                description="本人確認のため、顔がはっきり見えるセルフィーを撮影してください"
-                aspectRatio="portrait"
-                maxWidth={480}
-                maxHeight={640}
+                description="顔がはっきりと見えるように撮影してください"
+                aspectRatio="square"
+                maxWidth={800}
+                maxHeight={800}
+                useFrontCamera={true}  // ← 既に設定済み
               />
             </div>
 
