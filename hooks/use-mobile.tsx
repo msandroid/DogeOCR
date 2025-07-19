@@ -26,15 +26,11 @@ export function useIsMobile() {
   React.useEffect(() => {
     const checkMobile = () => {
       try {
-        console.log("デバイス判定開始")
-        
         // Safari検出
         const safari = isSafari()
         const iosSafari = isIOSSafari()
         setIsSafariBrowser(safari)
         setIsIOSSafariBrowser(iosSafari)
-        
-        console.log("Safari検出結果:", { safari, iosSafari })
 
         // ユーザーエージェントによる判定
         const userAgent = navigator.userAgent.toLowerCase()
@@ -49,13 +45,6 @@ export function useIsMobile() {
         // デバイスピクセル比による判定
         const isHighDPR = window.devicePixelRatio > 1
         
-        console.log("デバイス判定結果:", {
-          isMobileUserAgent,
-          isMobileWidth,
-          hasTouchScreen,
-          isHighDPR
-        })
-        
         // Safari固有の判定ロジック
         if (safari) {
           // Safariの場合はより慎重に判定
@@ -65,8 +54,6 @@ export function useIsMobile() {
             hasTouchScreen ? 2 : 0,
             isHighDPR ? 1 : 0
           ].reduce((sum, score) => sum + score, 0)
-          
-          console.log("Safari判定スコア:", mobileScore)
           
           // Safariではスコアが4以上の場合をモバイルと判定
           setIsMobile(mobileScore >= 4)
@@ -79,27 +66,17 @@ export function useIsMobile() {
             isHighDPR ? 1 : 0
           ].reduce((sum, score) => sum + score, 0)
           
-          console.log("通常ブラウザ判定スコア:", mobileScore)
-          
           // スコアが3以上の場合をモバイルと判定
           setIsMobile(mobileScore >= 3)
         }
       } catch (error) {
         console.warn('デバイス判定でエラーが発生しました:', error)
         // エラーが発生した場合はフォールバック
-        try {
-          setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-        } catch (fallbackError) {
-          console.error('フォールバック処理でもエラーが発生:', fallbackError)
-          setIsMobile(false) // 最終フォールバック
-        }
+        setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
       }
     }
 
-    // 初期化を遅延実行（Safariでの問題を回避）
-    const timer = setTimeout(() => {
-      checkMobile()
-    }, 50)
+    checkMobile()
     
     // Safariの場合はより頻繁にチェック
     const checkInterval = isSafari() ? 1000 : 5000
@@ -111,7 +88,6 @@ export function useIsMobile() {
     mql.addEventListener("change", onChange)
     
     return () => {
-      clearTimeout(timer)
       clearInterval(interval)
       mql.removeEventListener("change", onChange)
     }

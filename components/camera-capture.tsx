@@ -14,7 +14,7 @@ interface CameraCaptureProps {
   aspectRatio?: "square" | "portrait" | "landscape"
   maxWidth?: number
   maxHeight?: number
-  facingMode?: "user" | "environment"
+  cameraType?: "front" | "back" // カメラタイプを追加
 }
 
 // Safari検出関数
@@ -40,7 +40,7 @@ export default function CameraCapture({
   aspectRatio = "portrait",
   maxWidth = 640,
   maxHeight = 480,
-  facingMode = "environment"
+  cameraType = "back" // デフォルトは背面カメラ
 }: CameraCaptureProps) {
   const [isStreaming, setIsStreaming] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string>("")
@@ -74,6 +74,9 @@ export default function CameraCapture({
         throw new Error("このブラウザはカメラ機能をサポートしていません")
       }
 
+      // カメラタイプに基づくfacingMode設定
+      const facingMode = cameraType === "front" ? "user" : "environment"
+
       // Safari固有のカメラ設定
       let constraints
       if (isSafariBrowser) {
@@ -82,7 +85,7 @@ export default function CameraCapture({
           video: {
             width: { ideal: Math.min(maxWidth, 1280) },
             height: { ideal: Math.min(maxHeight, 720) },
-            // SafariではfacingModeの指定を避ける
+            // SafariではfacingModeの指定を避ける場合がある
             ...(isIOSSafariBrowser ? {} : { facingMode })
           }
         }
@@ -92,12 +95,10 @@ export default function CameraCapture({
           video: {
             width: { ideal: maxWidth },
             height: { ideal: maxHeight },
-            facingMode // 指定されたカメラを使用
+            facingMode // 指定されたカメラタイプを使用
           }
         }
       }
-
-      console.log("カメラ起動開始:", constraints)
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
@@ -105,12 +106,10 @@ export default function CameraCapture({
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         videoRef.current.onloadedmetadata = () => {
-          console.log("カメラ起動完了")
           setIsStreaming(true)
           setIsLoading(false)
         }
-        videoRef.current.onerror = (error) => {
-          console.error("ビデオエラー:", error)
+        videoRef.current.onerror = () => {
           setError("ビデオストリームの読み込みに失敗しました")
           setIsLoading(false)
         }
@@ -133,13 +132,6 @@ export default function CameraCapture({
           errorMessage = "Safariでカメラ設定に問題が発生しました。ブラウザを更新するか、別のブラウザをお試しください。"
         } else {
           errorMessage = "カメラの設定に問題が発生しました。"
-        }
-      } else if (err.name === "TypeError") {
-        // Safariでよくあるエラー
-        if (isSafariBrowser) {
-          errorMessage = "Safariでカメラ機能に問題が発生しました。HTTPS接続でアクセスしているか確認してください。"
-        } else {
-          errorMessage = "カメラ機能の初期化に失敗しました。"
         }
       }
       
@@ -261,6 +253,15 @@ export default function CameraCapture({
     }
   }
 
+  // カメラタイプに基づく説明文
+  const getCameraDescription = () => {
+    if (cameraType === "front") {
+      return `${description} (内側カメラ)`
+    } else {
+      return `${description} (背面カメラ)`
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -268,13 +269,16 @@ export default function CameraCapture({
           <Camera className="h-4 w-4" />
           {title}
           {isSafariBrowser && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="secondary" className="text-xs">
               Safari
             </Badge>
           )}
+          <Badge variant="outline" className="text-xs">
+            {cameraType === "front" ? "内側カメラ" : "背面カメラ"}
+          </Badge>
         </CardTitle>
         <CardDescription className="text-xs">
-          {description}
+          {getCameraDescription()}
           {isSafariBrowser && (
             <span className="block mt-1 text-orange-600">
               Safari互換モードで動作中
@@ -304,6 +308,9 @@ export default function CameraCapture({
                   <div className="text-center">
                     <Camera className="h-12 w-12 text-gray-400 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">カメラを起動してください</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {cameraType === "front" ? "内側カメラ" : "背面カメラ"}を使用
+                    </p>
                   </div>
                 </div>
               )}
