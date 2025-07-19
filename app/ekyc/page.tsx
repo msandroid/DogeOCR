@@ -361,6 +361,11 @@ export default function EKYCPage() {
           title: "認証完了",
           description: "eKYC認証が完了しました。",
         })
+        
+        // 認証完了後に結果ページに遷移
+        const resultData = encodeURIComponent(JSON.stringify(data.data))
+        const resultUrl = `/verification-result?sessionId=${data.data.sessionId}&result=${resultData}`
+        router.push(resultUrl)
       } else {
         throw new Error(data.error || "認証に失敗しました")
       }
